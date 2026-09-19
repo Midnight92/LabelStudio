@@ -482,3 +482,10 @@ $RECYCLE.BIN/
 *.swp
 
 .superpowers/
+
+# Private, not code: kept local only (never publish)
+/docs/
+/CLAUDE.md
+/.agents/
+/.claude/
+/skills-lock.json
