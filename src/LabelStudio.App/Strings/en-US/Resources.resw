@@ -24,6 +24,17 @@
   <data name="Placeholder_queue_Body" xml:space="preserve"><value>Job queue, history and reprint arrive in milestone M4.</value></data>
   <data name="Placeholder_settings_Title" xml:space="preserve"><value>Settings</value></data>
   <data name="Placeholder_settings_Body" xml:space="preserve"><value>Units, theme and density settings arrive in milestone M2.</value></data>
-  <data name="Placeholder_printers_Title" xml:space="preserve"><value>Printers</value></data>
-  <data name="Placeholder_printers_Body" xml:space="preserve"><value>The printer dashboard is added in the next task. (Task 10 stops routing here; delete these two entries then.)</value></data>
+  <data name="Printers_ListHeader.Text" xml:space="preserve"><value>USB printers</value></data>
+  <data name="Printers_Refresh.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Refresh (F5)</value></data>
+  <data name="Printers_Refresh.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Refresh printers</value></data>
+  <data name="Printers_CurrentBadge.Text" xml:space="preserve"><value>In use</value></data>
+  <data name="Printers_EmptyList.Text" xml:space="preserve"><value>No Zebra printer found on USB. Check the cable and power, then choose Refresh.</value></data>
+  <data name="Printers_Feed.Content" xml:space="preserve"><value>Feed label</value></data>
+  <data name="Printers_TestLabel.Content" xml:space="preserve"><value>Print test label</value></data>
+  <data name="Printers_Overview.Text" xml:space="preserve"><value>Overview</value></data>
+  <data name="Printers_Capabilities.Text" xml:space="preserve"><value>Capabilities</value></data>
+  <data name="Printers_IdentityCard.Text" xml:space="preserve"><value>Identity</value></data>
+  <data name="Printers_MediaCard.Text" xml:space="preserve"><value>Media</value></data>
+  <data name="Printers_CapabilitiesIntro.Text" xml:space="preserve"><value>Settings this printer answered when probed. Settings it did not answer stay hidden elsewhere in the app.</value></data>
+  <data name="Printers_Reprobe.Content" xml:space="preserve"><value>Probe again</value></data>
 </root>

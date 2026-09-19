@@ -24,9 +24,9 @@ public sealed class NavigationService : INavigationService
             : _nav.MenuItems.OfType<NavigationViewItem>().FirstOrDefault(i => (string)i.Tag == pageKey);
     }
 
-    // Task 10 adds: PageKeys.Printers => (typeof(PrintersPage), null)
     private static (Type Page, object? Parameter) PageFor(string key) => key switch
     {
+        PageKeys.Printers => (typeof(PrintersPage), null),
         _ => (typeof(PlaceholderPage), key),
     };
 }

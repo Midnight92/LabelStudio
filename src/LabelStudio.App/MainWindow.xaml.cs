@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.Windows.ApplicationModel.Resources;
 
 namespace LabelStudio.App;
 
@@ -17,6 +18,7 @@ public sealed partial class MainWindow : Window
         Shell = App.Services.GetRequiredService<ShellViewModel>();
         _navigation = App.Services.GetRequiredService<NavigationService>();
         InitializeComponent();
+        Title = new ResourceLoader().GetString("AppTitleBar/Title");
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
         SystemBackdrop = new MicaBackdrop();
