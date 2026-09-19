@@ -41,8 +41,12 @@
           </DataTemplate>
         </ListView.ItemTemplate>
       </ListView>
-      <TextBlock Grid.Row="1" x:Uid="Printers_EmptyList" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                 Visibility="{x:Bind ViewModel.HasNoPrinters, Mode=OneWay}" />
+      <StackPanel Grid.Row="1" Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="16"
+                  Visibility="{x:Bind ViewModel.HasNoPrinters, Mode=OneWay}">
+        <FontIcon Glyph="&#xE749;" FontSize="32" HorizontalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        <TextBlock x:Uid="Printers_EmptyList" TextWrapping="Wrap" TextAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        <Button x:Uid="Printers_EmptyRefresh" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Center" Command="{x:Bind ViewModel.RefreshCommand}" />
+      </StackPanel>
     </Grid>
 
     <!-- Detail: dashboard -->
@@ -52,14 +56,22 @@
            children a real, capped measure constraint, so the Identity/Media star columns size correctly. -->
       <Grid HorizontalAlignment="Left" MaxWidth="1040">
       <StackPanel Padding="32,22" Spacing="16">
-        <Grid ColumnSpacing="8">
+        <Grid ColumnSpacing="8" RowSpacing="4">
           <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-          <TextBlock Text="{x:Bind ViewModel.Heading, Mode=OneWay}" Style="{StaticResource TitleTextBlockStyle}" />
+          <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+          <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <TextBlock Text="{x:Bind ViewModel.Heading, Mode=OneWay}" Style="{StaticResource TitleTextBlockStyle}" />
+            <ProgressRing IsActive="{x:Bind ViewModel.IsConnecting, Mode=OneWay}" Width="20" Height="20"
+                          Visibility="{x:Bind ViewModel.IsConnecting, Mode=OneWay}" />
+          </StackPanel>
           <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
             <Button x:Uid="Printers_Feed" Command="{x:Bind ViewModel.FeedCommand}" />
             <Button Content="{x:Bind ViewModel.PauseLabel, Mode=OneWay}" Command="{x:Bind ViewModel.TogglePauseCommand}" />
             <Button x:Uid="Printers_TestLabel" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.PrintTestLabelCommand}" />
           </StackPanel>
+          <TextBlock Grid.Row="1" Grid.Column="1" Text="{x:Bind ViewModel.ActionHint, Mode=OneWay}" TextWrapping="Wrap" TextAlignment="Right"
+                     Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                     Visibility="{x:Bind app:XamlHelpers.VisibleWhenNotNull(ViewModel.ActionHint), Mode=OneWay}" />
         </Grid>
 
         <!-- Status card: replaces LED blink interpretation with words (spec §5). -->

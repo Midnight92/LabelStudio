@@ -55,10 +55,22 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
     [ObservableProperty] public partial bool IsPaused { get; set; }
     [ObservableProperty] public partial bool HasNoPrinters { get; set; }
     [ObservableProperty] public partial string? CommandError { get; set; }
+    [ObservableProperty] public partial string? ActionHint { get; set; }
+    [ObservableProperty] public partial bool IsConnecting { get; set; }
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(PrintTestLabelCommand), nameof(FeedCommand), nameof(TogglePauseCommand), nameof(ReprobeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(TogglePauseCommand), nameof(ReprobeCommand))]
     public partial bool IsConnected { get; set; }
+
+    /// <summary>Gates <see cref="PrintTestLabelCommand"/>: printing is only safe when the printer is actually ready.</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(PrintTestLabelCommand))]
+    public partial bool IsReady { get; set; }
+
+    /// <summary>Gates <see cref="FeedCommand"/>: feeding is harmless while paused, unlike printing.</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(FeedCommand))]
+    public partial bool CanFeed { get; set; }
 
     [RelayCommand]
     private Task ConnectAsync(PrinterListItem? item) => item is null ? Task.CompletedTask : RunAsync(ct => _devices.ConnectAsync(item.Info, ct));
@@ -66,10 +78,10 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private Task RefreshAsync() => RunAsync(ct => IsConnected ? _devices.RefreshAsync(ct) : _devices.ReconnectAsync(ct));
 
-    [RelayCommand(CanExecute = nameof(IsConnected))]
+    [RelayCommand(CanExecute = nameof(IsReady))]
     private Task PrintTestLabelAsync() => RunAsync(_devices.PrintTestLabelAsync);
 
-    [RelayCommand(CanExecute = nameof(IsConnected))]
+    [RelayCommand(CanExecute = nameof(CanFeed))]
     private Task FeedAsync() => RunAsync(_devices.FeedAsync);
 
     [RelayCommand(CanExecute = nameof(IsConnected))]
@@ -108,7 +120,14 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
     {
         Status = StatusPresenter.Present(s, _devices.Printers.Count);
         IsConnected = s.Connection == ConnectionState.Connected;
+        IsConnecting = s.Connection == ConnectionState.Connecting;
         IsPaused = s.State == PrinterState.Paused;
+        IsReady = IsConnected && s.State == PrinterState.Ready;
+        CanFeed = IsConnected && s.State is PrinterState.Ready or PrinterState.Paused;
+        ActionHint = !IsConnected ? Strings.Get("Printers.Hint.NotConnected")
+            : IsPaused ? Strings.Get("Printers.Hint.Paused")
+            : s.State != PrinterState.Ready ? Strings.Get("Printers.Hint.Fault")
+            : null;
         PauseLabel = Strings.Get(IsPaused ? "Printers.Resume" : "Printers.Pause");
         Heading = s.Profile?.VariantName ?? s.Printer?.FriendlyName ?? Strings.Get("Printers.NoSelection");
 

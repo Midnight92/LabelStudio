@@ -71,6 +71,9 @@
   <data name="Printers.Pause" xml:space="preserve"><value>Pause</value></data>
   <data name="Printers.Resume" xml:space="preserve"><value>Resume</value></data>
   <data name="Printers.CommandError" xml:space="preserve"><value>Couldn't complete that on the printer: {0}</value></data>
+  <data name="Printers.Hint.NotConnected" xml:space="preserve"><value>Connect a printer to use these actions.</value></data>
+  <data name="Printers.Hint.Fault" xml:space="preserve"><value>Clear the printer fault to print or feed.</value></data>
+  <data name="Printers.Hint.Paused" xml:space="preserve"><value>Resume the printer to print a test label.</value></data>
   <data name="Sgd.Responded" xml:space="preserve"><value>Responded</value></data>
   <data name="Sgd.NoResponse" xml:space="preserve"><value>No response</value></data>
 </root>
