@@ -6,12 +6,17 @@ using LabelStudio.Devices.Discovery;
 using LabelStudio.Devices.Status;
 using LabelStudio.Devices.Transport;
 
-// Usage: LabelStudio.Probe [--out <file.md>] [--test-print]
+// Usage: LabelStudio.Probe [--out <file.md>] [--test-print] [--investigate-m2a]
 // Default --out is per-unit (variant + serial) so re-running against a different printer, or a different
 // unit of the same variant, never silently overwrites another unit's report (or the hand-written M1
 // end-to-end report that predates this convention).
 var outOption = Option(args, "--out");
 var testPrint = args.Contains("--test-print");
+if (args.Contains("--investigate-m2a"))
+{
+    using var investigation = new CancellationTokenSource(TimeSpan.FromMinutes(15));
+    return await LabelStudio.Probe.Investigation.RunAsync(outOption, investigation.Token);
+}
 using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
 
 var printers = await new UsbPrinterDiscovery().FindAllAsync(cts.Token);
