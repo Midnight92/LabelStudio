@@ -11,6 +11,9 @@ namespace LabelStudio.ViewModels.Printers;
 
 public sealed partial class PrintersViewModel : ObservableObject, IDisposable
 {
+    // Segoe Fluent Icons code points (CheckMark, Remove).
+    private const string RespondedGlyph = "", NoResponseGlyph = "";
+
     private static readonly (string Key, string Label, Func<string, int, string> Format)[] MediaFields =
     [
         (SgdKeys.MediaType, "Row.MediaType", (v, _) => v),
@@ -91,7 +94,8 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
         {
             await action(CancellationToken.None);
         }
-        catch (Exception ex) when (ex is TimeoutException or IOException or InvalidOperationException or PrinterUnavailableException or PrinterProtocolException)
+        catch (Exception ex) when (ex is TimeoutException or IOException or UnauthorizedAccessException or InvalidOperationException
+            or ObjectDisposedException or PrinterUnavailableException or PrinterProtocolException)
         {
             CommandError = Strings.Format("Printers.CommandError", ex.Message);
         }
@@ -115,8 +119,8 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
             Replace(Media, s.Profile is null ? [] : MediaFields.Where(f => s.Profile.Supports(f.Key))
                 .Select(f => new KeyValueRow(Strings.Get(f.Label), f.Format(s.Profile.Settings[f.Key], s.Profile.DotsPerMm))));
             Replace(ProbedKeys, s.Profile is null ? [] : SgdKeys.ProbeList.Select(k => s.Profile.Settings.TryGetValue(k, out var v)
-                ? new SgdKeyRow(k, v, true, Strings.Get("Sgd.Responded"), "")
-                : new SgdKeyRow(k, "", false, Strings.Get("Sgd.NoResponse"), "")));
+                ? new SgdKeyRow(k, v, true, Strings.Get("Sgd.Responded"), RespondedGlyph)
+                : new SgdKeyRow(k, "", false, Strings.Get("Sgd.NoResponse"), NoResponseGlyph)));
         }
         if (s.Printer?.Serial != _shownCurrentSerial) ApplyPrinters();
     }

@@ -27,6 +27,23 @@ public class PrintersViewModelTests
     }
 
     [Fact]
+    public async Task Probed_key_rows_have_distinct_nonempty_glyphs()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        var (svc, _, _) = TestDevices.Create(dir, printer);
+        await using var _ = svc;
+        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher());
+        await svc.StartAsync(CancellationToken.None);
+
+        Assert.NotEmpty(vm.ProbedKeys);
+        Assert.All(vm.ProbedKeys, k => Assert.False(string.IsNullOrEmpty(k.Glyph)));
+        var respondedGlyph = vm.ProbedKeys.First(k => k.Responded).Glyph;
+        var noResponseGlyph = vm.ProbedKeys.First(k => !k.Responded).Glyph;
+        Assert.NotEqual(respondedGlyph, noResponseGlyph);
+    }
+
+    [Fact]
     public async Task Test_label_command_prints()
     {
         using var dir = new TempDir();
