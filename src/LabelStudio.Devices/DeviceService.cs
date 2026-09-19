@@ -27,6 +27,7 @@ public sealed class DeviceService : IAsyncDisposable
     private UsbPrinterInfo? _target;
     private int _failures;
     private Task? _loop;
+    private volatile bool _disposed;
 
     public DeviceService(IPrinterDiscovery discovery, ITransportFactory transports, CapabilityProber prober, IProfileCache profiles,
         ISettingsService settings, TimeProvider time, ILogger<DeviceService> log)
@@ -97,26 +98,38 @@ public sealed class DeviceService : IAsyncDisposable
         return Printers.FirstOrDefault(p => p.Serial == last) ?? (Printers.Count == 1 ? Printers[0] : null);
     }
 
-    private async Task ConnectCoreAsync(UsbPrinterInfo printer, CancellationToken ct)
+    /// <param name="announce">
+    /// Whether to publish the transient <see cref="ConnectionState.Connecting"/> snapshot. False for background
+    /// retries (poll-driven and hot-plug-driven reconnects) so a still-absent/claimed printer doesn't flicker
+    /// Connecting/Disconnected on every attempt; the final Connected/Disconnected snapshot is always published.
+    /// </param>
+    private async Task ConnectCoreAsync(UsbPrinterInfo printer, CancellationToken ct, bool announce = true)
     {
         await CloseSessionAsync();
         _target = printer;
-        Publish(new DeviceSnapshot(ConnectionState.Connecting, printer, null, null, null, DeviceProblem.None));
+        if (announce) Publish(new DeviceSnapshot(ConnectionState.Connecting, printer, null, null, null, DeviceProblem.None));
         var session = new PrinterSession(_transports.Create(printer), _log);
+        var assigned = false;
         try
         {
             await session.OpenAsync(ct);
             var profile = await _prober.ProbeAsync(session, printer.Serial, _profiles.GetUnresponsiveKeys(printer.Serial), ct);
             _profiles.SaveUnresponsiveKeys(printer.Serial, profile.UnresponsiveKeys);
             var status = await session.GetHostStatusAsync(ct);
+            if (_disposed) return; // about to be (or already being) torn down: let the finally below dispose it, don't publish or adopt it.
             _session = session;
+            assigned = true;
             _failures = 0;
             _settings.Update(s => s with { LastPrinterSerial = printer.Serial });
             Publish(new DeviceSnapshot(ConnectionState.Connected, printer, profile, status, PrinterStateResolver.Resolve(status), DeviceProblem.None));
         }
+        catch (OperationCanceledException)
+        {
+            Publish(new DeviceSnapshot(ConnectionState.Disconnected, printer, null, null, null, DeviceProblem.NotResponding));
+            throw;
+        }
         catch (Exception ex) when (IsDeviceFailure(ex))
         {
-            await session.DisposeAsync();
             _failures++;
             _log.LogWarning(ex, "Connecting to printer {Serial} failed", printer.Serial);
             var problem = ex is PrinterUnavailableException u
@@ -129,13 +142,19 @@ public sealed class DeviceService : IAsyncDisposable
                 : DeviceProblem.NotResponding;
             Publish(new DeviceSnapshot(ConnectionState.Disconnected, printer, null, null, null, problem));
         }
+        finally
+        {
+            // Every non-success path (device failure, cancellation, an unexpected exception, or losing the
+            // race with DisposeAsync) must dispose the local transport instead of leaking it.
+            if (!assigned) await session.DisposeAsync();
+        }
     }
 
     private async Task PollCoreAsync(CancellationToken ct)
     {
         if (_session is null)
         {
-            if (_target is not null && Printers.Any(p => p.Serial == _target.Serial)) await ConnectCoreAsync(_target, ct);
+            if (_target is not null && Printers.Any(p => p.Serial == _target.Serial)) await ConnectCoreAsync(_target, ct, announce: false);
             return;
         }
         try
@@ -180,9 +199,12 @@ public sealed class DeviceService : IAsyncDisposable
 
     private async Task HandleDevicesChangedAsync()
     {
-        var ct = _lifetime.Token;
+        // This runs fire-and-forget off a discovery event, possibly racing DisposeAsync: bail out before
+        // touching _lifetime (which DisposeAsync disposes) so a stray in-flight callback can't fault silently.
+        if (_disposed) return;
         try
         {
+            var ct = _lifetime.Token;
             await RunExclusiveAsync(async () =>
             {
                 await RefreshPrintersAsync(ct);
@@ -194,11 +216,12 @@ public sealed class DeviceService : IAsyncDisposable
                 else if (_session is null)
                 {
                     var candidate = _target is not null ? Printers.FirstOrDefault(p => p.Serial == _target.Serial) : ChooseAutoTarget();
-                    if (candidate is not null) await ConnectCoreAsync(candidate, ct);
+                    if (candidate is not null) await ConnectCoreAsync(candidate, ct, announce: false);
                 }
             }, ct);
         }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
+        catch (OperationCanceledException) { }
+        catch (ObjectDisposedException) { }
         catch (Exception ex)
         {
             _log.LogError(ex, "Handling a USB device change failed");
@@ -229,7 +252,11 @@ public sealed class DeviceService : IAsyncDisposable
     private async Task RunExclusiveAsync(Func<Task> action, CancellationToken ct)
     {
         await _ops.WaitAsync(ct);
-        try { await action(); }
+        try
+        {
+            if (_disposed) throw new ObjectDisposedException(nameof(DeviceService));
+            await action();
+        }
         finally { _ops.Release(); }
     }
 
@@ -238,6 +265,7 @@ public sealed class DeviceService : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        _disposed = true;
         _discovery.DevicesChanged -= OnDevicesChanged;
         _discovery.StopWatching();
         await _lifetime.CancelAsync();
@@ -245,7 +273,11 @@ public sealed class DeviceService : IAsyncDisposable
         {
             try { await _loop; } catch (OperationCanceledException) { }
         }
-        await CloseSessionAsync();
+        // Wait for whatever's currently in flight (e.g. a ConnectAsync/ReprobeAsync) to finish and release the
+        // gate before closing the session, so we can never race an in-flight ConnectCoreAsync's own assignment.
+        await _ops.WaitAsync(CancellationToken.None);
+        try { await CloseSessionAsync(); }
+        finally { _ops.Release(); }
         _lifetime.Dispose();
     }
 }

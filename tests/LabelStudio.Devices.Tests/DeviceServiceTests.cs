@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Reflection;
 using LabelStudio.Devices.Capabilities;
 using LabelStudio.Devices.Simulation;
 using LabelStudio.Devices.Status;
@@ -144,5 +146,82 @@ public class DeviceServiceTests
         Assert.Equal(1, printer.GetVarRequests.Count(k => k == SgdKeys.PowerUpAction));
         await svc.ReprobeAsync(None);
         Assert.Equal(2, printer.GetVarRequests.Count(k => k == SgdKeys.PowerUpAction));
+    }
+
+    // --- Fix round 1 (review findings 1-4) ---
+
+    [Fact]
+    public async Task Cancelling_a_connect_disposes_the_transport_and_allows_a_later_reconnect()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        printer.SilentKeys.Add(SgdKeys.ApplName); // never answers -> the probe loop keeps awaiting until cancelled or timed out
+        var (svc, _, _) = TestDevices.Create(dir, printer);
+        await using var _ = svc;
+
+        using (var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(10)))
+        {
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => svc.ConnectAsync(printer.Info, cts.Token));
+        }
+        Assert.NotEqual(ConnectionState.Connecting, svc.Snapshot.Connection);
+
+        // A later connect must succeed: the cancelled attempt must not have left the transport (or the service) in a bad state.
+        await svc.ConnectAsync(printer.Info, None);
+        Assert.Equal(ConnectionState.Connected, svc.Snapshot.Connection);
+    }
+
+    [Fact]
+    public async Task Dispose_waits_for_an_in_flight_connect_before_closing_the_session()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        printer.SilentKeys.Add(SgdKeys.ApplName); // makes the (re)probe take ~50 ms of real wall-clock time
+        var (svc, _, _) = TestDevices.Create(dir, printer);
+        await svc.StartAsync(None); // ApplName gets cached as unresponsive
+
+        var reprobeTask = svc.ReprobeAsync(None); // clears the cache, so ApplName is queried for real (~50 ms) again
+        var sw = Stopwatch.StartNew();
+        await svc.DisposeAsync();
+        sw.Stop();
+
+        var reprobeException = await Record.ExceptionAsync(() => reprobeTask);
+        Assert.Null(reprobeException);
+        Assert.True(sw.ElapsedMilliseconds >= 30,
+            $"DisposeAsync returned after {sw.ElapsedMilliseconds} ms; it must wait for the in-flight reprobe " +
+            "(and its session) before closing the session, not race it.");
+    }
+
+    [Fact]
+    public async Task Devices_changed_handler_does_not_throw_after_dispose()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        var (svc, _, _) = TestDevices.Create(dir, printer);
+        await svc.StartAsync(None);
+        await svc.DisposeAsync();
+
+        // The event is unsubscribed by DisposeAsync, so exercise the handler directly to prove the
+        // (private) fire-and-forget path used to reach a disposed CancellationTokenSource is now guarded.
+        var method = typeof(DeviceService).GetMethod("HandleDevicesChangedAsync", BindingFlags.NonPublic | BindingFlags.Instance)!;
+        var task = (Task)method.Invoke(svc, null)!;
+        var ex = await Record.ExceptionAsync(() => task);
+        Assert.Null(ex);
+    }
+
+    [Fact]
+    public async Task Background_reconnect_attempts_do_not_flicker_through_connecting()
+    {
+        using var dir = new TempDir();
+        var (svc, _, _) = TestDevices.Create(dir, new SimulatedPrinter { Claimed = true });
+        await using var _ = svc;
+        await svc.StartAsync(None);
+
+        var seen = new List<ConnectionState>();
+        svc.SnapshotChanged += (_, snap) => seen.Add(snap.Connection);
+
+        await svc.RefreshAsync(None);
+        await svc.RefreshAsync(None);
+
+        Assert.DoesNotContain(ConnectionState.Connecting, seen);
     }
 }
