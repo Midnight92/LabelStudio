@@ -21,17 +21,21 @@ public sealed partial class ShellViewModel : ObservableObject
     [ObservableProperty]
     public partial StatusPresentation Status { get; set; }
 
+    /// <summary>Set when a shell command fails; the shell doesn't display it yet (M1), but must never throw instead.</summary>
+    [ObservableProperty]
+    public partial string? CommandError { get; set; }
+
     [RelayCommand]
-    private Task PillActionAsync()
+    private Task PillActionAsync() => CommandGuard.RunAsync(ct =>
     {
-        if (Status.Action == StatusAction.Reconnect) return _devices.ReconnectAsync(CancellationToken.None);
+        if (Status.Action == StatusAction.Reconnect) return _devices.ReconnectAsync(ct);
         _navigation.NavigateTo(PageKeys.Printers);
         return Task.CompletedTask;
-    }
+    }, e => CommandError = e);
 
     /// <summary>F5 — refresh printer status (spec §15).</summary>
     [RelayCommand]
-    private Task RefreshAsync() => _devices.Snapshot.Connection == ConnectionState.Connected
-        ? _devices.RefreshAsync(CancellationToken.None)
-        : _devices.ReconnectAsync(CancellationToken.None);
+    private Task RefreshAsync() => CommandGuard.RunAsync(ct => _devices.Snapshot.Connection == ConnectionState.Connected
+        ? _devices.RefreshAsync(ct)
+        : _devices.ReconnectAsync(ct), e => CommandError = e);
 }

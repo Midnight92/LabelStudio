@@ -35,4 +35,19 @@ public class ShellViewModelTests
         await shell.PillActionCommand.ExecuteAsync(null);
         Assert.Equal(ConnectionState.Connected, svc.Snapshot.Connection);
     }
+
+    [Fact]
+    public async Task Refresh_after_the_device_service_is_disposed_does_not_throw_and_sets_CommandError()
+    {
+        using var dir = new TempDir();
+        var (svc, _, _) = TestDevices.Create(dir, new SimulatedPrinter());
+        var shell = new ShellViewModel(svc, new ImmediateDispatcher(), new RecordingNavigation());
+        await svc.StartAsync(CancellationToken.None);
+        await svc.DisposeAsync(); // RefreshCommand will now hit ObjectDisposedException inside DeviceService
+
+        var ex = await Record.ExceptionAsync(() => shell.RefreshCommand.ExecuteAsync(null));
+
+        Assert.Null(ex);
+        Assert.NotNull(shell.CommandError);
+    }
 }

@@ -22,6 +22,18 @@ public partial class App : Application
     {
         InitializeComponent();
         Services = ConfigureServices(DispatcherQueue.GetForCurrentThread());
+        UnhandledException += OnUnhandledException;
+    }
+
+    private static void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
+    {
+        // Always log, even for the fatal cases below, so the cause survives in the Debug log.
+        Services.GetRequiredService<ILogger<App>>().LogError(e.Exception, "Unhandled exception reached the application boundary");
+
+        // OutOfMemory/StackOverflow are not recoverable — let the platform terminate the process rather than
+        // pretending we handled them and continuing in a corrupt state. Everything else: log and keep running,
+        // same intent as CommandGuard for command bodies.
+        e.Handled = e.Exception is not (OutOfMemoryException or StackOverflowException);
     }
 
     public static IServiceProvider Services { get; private set; } = null!;

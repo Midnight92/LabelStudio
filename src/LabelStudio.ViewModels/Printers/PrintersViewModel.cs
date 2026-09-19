@@ -99,19 +99,7 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
         _ => Task.CompletedTask,
     };
 
-    private async Task RunAsync(Func<CancellationToken, Task> action)
-    {
-        CommandError = null;
-        try
-        {
-            await action(CancellationToken.None);
-        }
-        catch (Exception ex) when (ex is TimeoutException or IOException or UnauthorizedAccessException or InvalidOperationException
-            or ObjectDisposedException or PrinterUnavailableException or PrinterProtocolException)
-        {
-            CommandError = Strings.Format("Printers.CommandError", ex.Message);
-        }
-    }
+    private Task RunAsync(Func<CancellationToken, Task> action) => CommandGuard.RunAsync(action, e => CommandError = e);
 
     private void OnSnapshotChanged(object? sender, DeviceSnapshot s) => _ui.Post(() => Apply(s));
     private void OnPrintersChanged(object? sender, EventArgs e) => _ui.Post(ApplyPrinters);
@@ -121,11 +109,11 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
         Status = StatusPresenter.Present(s, _devices.Printers.Count);
         IsConnected = s.Connection == ConnectionState.Connected;
         IsConnecting = s.Connection == ConnectionState.Connecting;
-        IsPaused = s.State == PrinterState.Paused;
+        IsPaused = s.Status?.Paused == true; // the printer pauses itself on faults, so this can be true even under a fault State
         IsReady = IsConnected && s.State == PrinterState.Ready;
         CanFeed = IsConnected && s.State is PrinterState.Ready or PrinterState.Paused;
         ActionHint = !IsConnected ? Strings.Get("Printers.Hint.NotConnected")
-            : IsPaused ? Strings.Get("Printers.Hint.Paused")
+            : s.State == PrinterState.Paused ? Strings.Get("Printers.Hint.Paused") // State-based: faults outrank Paused (see PrinterStateResolver)
             : s.State != PrinterState.Ready ? Strings.Get("Printers.Hint.Fault")
             : null;
         PauseLabel = Strings.Get(IsPaused ? "Printers.Resume" : "Printers.Pause");

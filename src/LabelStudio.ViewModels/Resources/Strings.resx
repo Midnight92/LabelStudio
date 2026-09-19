@@ -71,6 +71,7 @@
   <data name="Printers.Pause" xml:space="preserve"><value>Pause</value></data>
   <data name="Printers.Resume" xml:space="preserve"><value>Resume</value></data>
   <data name="Printers.CommandError" xml:space="preserve"><value>Couldn't complete that on the printer: {0}</value></data>
+  <data name="Command.UnexpectedError" xml:space="preserve"><value>Something went wrong. Try again; if it keeps happening, restart the app.</value></data>
   <data name="Printers.Hint.NotConnected" xml:space="preserve"><value>Connect a printer to use these actions.</value></data>
   <data name="Printers.Hint.Fault" xml:space="preserve"><value>Clear the printer fault to print or feed.</value></data>
   <data name="Printers.Hint.Paused" xml:space="preserve"><value>Resume the printer to print a test label.</value></data>

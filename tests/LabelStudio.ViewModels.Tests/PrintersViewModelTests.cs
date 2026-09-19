@@ -1,12 +1,42 @@
+using System.Text;
+using LabelStudio.Core;
+using LabelStudio.Devices;
 using LabelStudio.Devices.Capabilities;
+using LabelStudio.Devices.Discovery;
 using LabelStudio.Devices.Simulation;
+using LabelStudio.Devices.Transport;
 using LabelStudio.Tests;
 using LabelStudio.ViewModels.Printers;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 
 namespace LabelStudio.ViewModels.Tests;
 
 public class PrintersViewModelTests
 {
+    /// <summary>Wraps a real simulated transport but fails a specific command with an exception type the
+    /// command guard doesn't special-case, to exercise the generic "unexpected exception" mapping deterministically.</summary>
+    private sealed class WriteThrowsTransport(SimulatedPrinter printer, string triggerSubstring) : IPrinterTransport
+    {
+        private readonly SimulatedPrinterTransport _inner = new(printer);
+
+        public Task OpenAsync(CancellationToken ct) => _inner.OpenAsync(ct);
+
+        public Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken ct) =>
+            Encoding.UTF8.GetString(data.Span).Contains(triggerSubstring, StringComparison.Ordinal)
+                ? throw new NotSupportedException("Simulated unexpected transport failure.")
+                : _inner.WriteAsync(data, ct);
+
+        public Task<int> ReadAsync(Memory<byte> buffer, TimeSpan timeout, CancellationToken ct) => _inner.ReadAsync(buffer, timeout, ct);
+
+        public ValueTask DisposeAsync() => _inner.DisposeAsync();
+    }
+
+    private sealed class WriteThrowsTransportFactory(SimulatedPrinter printer, string triggerSubstring) : ITransportFactory
+    {
+        public IPrinterTransport Create(UsbPrinterInfo printerInfo) => new WriteThrowsTransport(printer, triggerSubstring);
+    }
+
     [Fact]
     public async Task Shows_identity_and_only_responding_media_settings()
     {
@@ -138,5 +168,42 @@ public class PrintersViewModelTests
 
         Assert.Contains(true, seen);
         Assert.False(vm.IsConnecting);
+    }
+
+    [Fact]
+    public async Task Unexpected_exception_from_a_command_maps_to_the_generic_error()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        var discovery = new SimulatedDiscovery(printer);
+        var settings = new SettingsService(new JsonFileStore<AppSettings>(dir.File("settings.json")));
+        var svc = new DeviceService(
+            discovery, new WriteThrowsTransportFactory(printer, "~PH"), new CapabilityProber(TimeSpan.FromMilliseconds(50)),
+            new ProfileCache(dir.File("profiles")), settings, new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
+        await using var _ = svc;
+        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher());
+        await svc.StartAsync(CancellationToken.None);
+        Assert.True(vm.IsConnected); // connect itself doesn't touch "~PH", so it should succeed normally
+
+        await vm.FeedCommand.ExecuteAsync(null); // Feed sends "~PH", which this transport throws NotSupportedException on
+
+        Assert.Equal("Something went wrong. Try again; if it keeps happening, restart the app.", vm.CommandError);
+    }
+
+    [Fact]
+    public async Task Fault_reports_paused_because_the_printer_pauses_itself_on_faults()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        var (svc, _, _) = TestDevices.Create(dir, printer);
+        await using var _ = svc;
+        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher());
+        await svc.StartAsync(CancellationToken.None);
+
+        printer.PaperOut = true; // the simulator's ~HS reports Paused=true whenever PaperOut is true, like real firmware
+        await svc.RefreshAsync(CancellationToken.None);
+
+        Assert.True(vm.IsPaused);
+        Assert.Equal("Resume", vm.PauseLabel);
     }
 }
