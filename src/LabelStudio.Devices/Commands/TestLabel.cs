@@ -18,7 +18,7 @@ public static class TestLabel
                  + "^XZ";
 
         return "^XA^CI28"
-             + "^FO30,30^A0N,36,36^FDZD220 Label Studio^FS"
+             + "^FO30,30^A0N,36,36^FDLabel Studio^FS"
              + $"^FO30,80^A0N,26,26^FD{Clean(profile.VariantName)} {Clean(profile.Firmware)}^FS"
              + $"^FO30,115^A0N,26,26^FDSerial {Clean(profile.Serial)}^FS"
              + $"^FO30,150^A0N,26,26^FD{when}^FS"
