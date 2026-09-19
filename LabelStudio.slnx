@@ -2,10 +2,12 @@
   <Folder Name="/src/">
     <Project Path="src/LabelStudio.Core/LabelStudio.Core.csproj" />
     <Project Path="src/LabelStudio.Devices/LabelStudio.Devices.csproj" />
+    <Project Path="src/LabelStudio.ViewModels/LabelStudio.ViewModels.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/LabelStudio.Core.Tests/LabelStudio.Core.Tests.csproj" />
     <Project Path="tests/LabelStudio.Devices.Tests/LabelStudio.Devices.Tests.csproj" />
+    <Project Path="tests/LabelStudio.ViewModels.Tests/LabelStudio.ViewModels.Tests.csproj" />
   </Folder>
   <Folder Name="/tools/">
     <Project Path="tools/LabelStudio.Probe/LabelStudio.Probe.csproj" />
