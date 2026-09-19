@@ -56,6 +56,14 @@ if (testPrint)
         Console.WriteLine("Printer reported Paused; sending ~PS (ZplCommands.Resume) first.");
         await session.SendRawAsync(ZplCommands.Resume, cts.Token);
         await Task.Delay(300, cts.Token);
+
+        // Verify the resume actually took before trusting the printer to feed the label.
+        var afterResume = PrinterStateResolver.Resolve(await session.GetHostStatusAsync(cts.Token));
+        if (afterResume != PrinterState.Ready)
+        {
+            Console.Error.WriteLine($"Printer is still {afterResume}; test label not sent.");
+            return 1;
+        }
     }
     await session.SendRawAsync(TestLabel.Build(profile, DateTimeOffset.Now), cts.Token);
     Console.WriteLine("Sent test label.");

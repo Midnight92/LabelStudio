@@ -11,21 +11,27 @@ public sealed class UsbPrintTransport(string devicePath) : IPrinterTransport
 
     public Task OpenAsync(CancellationToken ct)
     {
-        var handle = CreateFile(devicePath, GenericRead | GenericWrite, FileShareRead | FileShareWrite, IntPtr.Zero, OpenExisting, FileFlagOverlapped, IntPtr.Zero);
-        if (handle.IsInvalid)
-        {
-            var error = Marshal.GetLastPInvokeError();
-            handle.Dispose();
-            var reason = error switch
+        ct.ThrowIfCancellationRequested();
+        return Task.Run(
+            () =>
             {
-                ErrorAccessDenied or ErrorSharingViolation => PrinterUnavailableReason.Claimed,
-                ErrorFileNotFound or ErrorPathNotFound => PrinterUnavailableReason.NotFound,
-                _ => PrinterUnavailableReason.IoFailure,
-            };
-            throw new PrinterUnavailableException($"Could not open {devicePath} (Win32 error {error}).", reason, new Win32Exception(error));
-        }
-        _stream = new FileStream(handle, FileAccess.ReadWrite, bufferSize: 0, isAsync: true);
-        return Task.CompletedTask;
+                var handle = CreateFile(devicePath, GenericRead | GenericWrite, FileShareRead | FileShareWrite, IntPtr.Zero, OpenExisting, FileFlagOverlapped, IntPtr.Zero);
+                if (handle.IsInvalid)
+                {
+                    // Must read the last error on this same thread, before anything else can overwrite it.
+                    var error = Marshal.GetLastPInvokeError();
+                    handle.Dispose();
+                    var reason = error switch
+                    {
+                        ErrorAccessDenied or ErrorSharingViolation => PrinterUnavailableReason.Claimed,
+                        ErrorFileNotFound or ErrorPathNotFound => PrinterUnavailableReason.NotFound,
+                        _ => PrinterUnavailableReason.IoFailure,
+                    };
+                    throw new PrinterUnavailableException($"Could not open {devicePath} (Win32 error {error}).", reason, new Win32Exception(error));
+                }
+                _stream = new FileStream(handle, FileAccess.ReadWrite, bufferSize: 0, isAsync: true);
+            },
+            ct);
     }
 
     public async Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken ct)
