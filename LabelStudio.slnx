@@ -1,4 +1,8 @@
 <Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="Any CPU" />
+  </Configurations>
   <Folder Name="/src/">
     <Project Path="src/LabelStudio.Core/LabelStudio.Core.csproj" />
     <Project Path="src/LabelStudio.Devices/LabelStudio.Devices.csproj" />
