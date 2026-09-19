@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>$(WindowsTfm)</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <Using Include="Xunit" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Shared\TempDir.cs" Link="Shared\TempDir.cs" />
+    <ProjectReference Include="..\..\src\LabelStudio.Devices\LabelStudio.Devices.csproj" />
+  </ItemGroup>
+</Project>

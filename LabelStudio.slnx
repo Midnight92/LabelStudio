@@ -1,8 +1,10 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/LabelStudio.Core/LabelStudio.Core.csproj" />
+    <Project Path="src/LabelStudio.Devices/LabelStudio.Devices.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/LabelStudio.Core.Tests/LabelStudio.Core.Tests.csproj" />
+    <Project Path="tests/LabelStudio.Devices.Tests/LabelStudio.Devices.Tests.csproj" />
   </Folder>
 </Solution>
