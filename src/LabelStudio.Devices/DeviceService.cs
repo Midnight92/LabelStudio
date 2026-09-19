@@ -92,6 +92,43 @@ public sealed class DeviceService : IAsyncDisposable
     private Task SendCoreAsync(string commands, CancellationToken ct) =>
         (_session ?? throw new InvalidOperationException("No printer connected.")).SendRawAsync(commands, ct);
 
+    private IReadOnlySet<string> GetUnresponsiveKeysBestEffort(string serial)
+    {
+        try
+        {
+            return _profiles.GetUnresponsiveKeys(serial);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log.LogWarning(ex, "Could not read the cached unresponsive-key list for {Serial}; probing every key", serial);
+            return new HashSet<string>();
+        }
+    }
+
+    private void SaveUnresponsiveKeysBestEffort(string serial, IEnumerable<string> keys)
+    {
+        try
+        {
+            _profiles.SaveUnresponsiveKeys(serial, keys);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log.LogWarning(ex, "Could not cache the unresponsive-key list for {Serial}", serial);
+        }
+    }
+
+    private void UpdateLastPrinterSerialBestEffort(string serial)
+    {
+        try
+        {
+            _settings.Update(s => s with { LastPrinterSerial = serial });
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log.LogWarning(ex, "Could not persist the last-connected printer serial for {Serial}", serial);
+        }
+    }
+
     private UsbPrinterInfo? ChooseAutoTarget()
     {
         var last = _settings.Current.LastPrinterSerial;
@@ -113,14 +150,19 @@ public sealed class DeviceService : IAsyncDisposable
         try
         {
             await session.OpenAsync(ct);
-            var profile = await _prober.ProbeAsync(session, printer.Serial, _profiles.GetUnresponsiveKeys(printer.Serial), ct);
-            _profiles.SaveUnresponsiveKeys(printer.Serial, profile.UnresponsiveKeys);
+            var profile = await _prober.ProbeAsync(session, printer.Serial, GetUnresponsiveKeysBestEffort(printer.Serial), ct);
+            // A cache/settings write must never decide connectivity: a directory that can't be created or a
+            // locked file only costs us the next reconnect's skip-list optimisation, not this connection.
+            // Also: never persist an all-unresponsive probe (profile.Settings.Count == 0) — that almost
+            // certainly means the probe itself failed to talk to the printer, not that every key is genuinely
+            // unsupported, and caching it would wrongly skip every key forever.
+            if (profile.Settings.Count > 0) SaveUnresponsiveKeysBestEffort(printer.Serial, profile.UnresponsiveKeys);
             var status = await session.GetHostStatusAsync(ct);
             if (_disposed) return; // about to be (or already being) torn down: let the finally below dispose it, don't publish or adopt it.
             _session = session;
             assigned = true;
             _failures = 0;
-            _settings.Update(s => s with { LastPrinterSerial = printer.Serial });
+            UpdateLastPrinterSerialBestEffort(printer.Serial);
             Publish(new DeviceSnapshot(ConnectionState.Connected, printer, profile, status, PrinterStateResolver.Resolve(status), DeviceProblem.None));
         }
         catch (OperationCanceledException)

@@ -1,9 +1,12 @@
 using System.Diagnostics;
 using System.Reflection;
+using LabelStudio.Core;
 using LabelStudio.Devices.Capabilities;
 using LabelStudio.Devices.Simulation;
 using LabelStudio.Devices.Status;
 using LabelStudio.Tests;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 
 namespace LabelStudio.Devices.Tests;
 
@@ -223,5 +226,65 @@ public class DeviceServiceTests
         await svc.RefreshAsync(None);
 
         Assert.DoesNotContain(ConnectionState.Connecting, seen);
+    }
+
+    // --- Fix round 2 (final whole-branch review items 2, 3) ---
+
+    [Fact]
+    public async Task Connects_even_when_the_profile_cache_directory_cannot_be_created()
+    {
+        using var dir = new TempDir();
+        var badProfilesPath = dir.File("profiles");
+        File.WriteAllText(badProfilesPath, "occupies the path a directory would need"); // a FILE, not a directory
+        var printer = new SimulatedPrinter();
+        var discovery = new SimulatedDiscovery(printer);
+        var settings = new SettingsService(new JsonFileStore<AppSettings>(dir.File("settings.json")));
+        var svc = new DeviceService(
+            discovery, new SimulatedTransportFactory(discovery), new CapabilityProber(TimeSpan.FromMilliseconds(50)),
+            new ProfileCache(badProfilesPath), settings, new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
+        await using var _ = svc;
+
+        await svc.StartAsync(None);
+
+        Assert.Equal(ConnectionState.Connected, svc.Snapshot.Connection);
+    }
+
+    [Fact]
+    public async Task Connects_even_when_the_settings_save_fails()
+    {
+        using var dir = new TempDir();
+        var badSettingsParent = dir.File("settingsdir");
+        File.WriteAllText(badSettingsParent, "occupies the path a directory would need"); // a FILE, not a directory
+        var settingsPath = Path.Combine(badSettingsParent, "settings.json"); // its parent can never be created
+        var printer = new SimulatedPrinter();
+        var discovery = new SimulatedDiscovery(printer);
+        var settings = new SettingsService(new JsonFileStore<AppSettings>(settingsPath));
+        var svc = new DeviceService(
+            discovery, new SimulatedTransportFactory(discovery), new CapabilityProber(TimeSpan.FromMilliseconds(50)),
+            new ProfileCache(dir.File("profiles")), settings, new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
+        await using var _ = svc;
+
+        await svc.StartAsync(None);
+
+        Assert.Equal(ConnectionState.Connected, svc.Snapshot.Connection);
+    }
+
+    [Fact]
+    public async Task All_unresponsive_probe_is_not_cached_and_is_retried_on_the_next_connect()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        foreach (var key in SgdKeys.ProbeList) printer.SilentKeys.Add(key); // nothing responds -> profile.Settings is empty
+        var (svc, _, _) = TestDevices.Create(dir, printer);
+        await using var _ = svc;
+        await svc.StartAsync(None);
+        var firstAttempts = printer.GetVarRequests.Count;
+        Assert.True(firstAttempts > 0);
+
+        await svc.ConnectAsync(printer.Info, None);
+
+        Assert.True(printer.GetVarRequests.Count > firstAttempts,
+            $"Expected the second connect to re-query every key instead of trusting a cached all-unresponsive result " +
+            $"(first attempt count: {firstAttempts}, second: {printer.GetVarRequests.Count}).");
     }
 }

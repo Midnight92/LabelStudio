@@ -15,7 +15,7 @@ public sealed class JsonFileStore<T>(string path) where T : class
             using var stream = File.OpenRead(path);
             return JsonSerializer.Deserialize<T>(stream, Options);
         }
-        catch (JsonException)
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
             return null;
         }

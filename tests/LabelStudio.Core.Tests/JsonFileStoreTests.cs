@@ -29,4 +29,15 @@ public class JsonFileStoreTests
         File.WriteAllText(dir.File("bad.json"), "{ not json");
         Assert.Null(new JsonFileStore<Sample>(dir.File("bad.json")).Load());
     }
+
+    [Fact]
+    public void Load_returns_null_when_file_is_exclusively_locked()
+    {
+        using var dir = new TempDir();
+        var path = dir.File("locked.json");
+        File.WriteAllText(path, "{}");
+        using var lockHandle = new FileStream(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
+
+        Assert.Null(new JsonFileStore<Sample>(path).Load());
+    }
 }
