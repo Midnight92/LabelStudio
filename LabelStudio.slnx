@@ -7,4 +7,7 @@
     <Project Path="tests/LabelStudio.Core.Tests/LabelStudio.Core.Tests.csproj" />
     <Project Path="tests/LabelStudio.Devices.Tests/LabelStudio.Devices.Tests.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/LabelStudio.Probe/LabelStudio.Probe.csproj" />
+  </Folder>
 </Solution>
