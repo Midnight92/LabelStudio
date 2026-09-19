@@ -13,6 +13,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Shared\TempDir.cs" Link="Shared\TempDir.cs" />
+    <Compile Include="..\Shared\TestDevices.cs" Link="Shared\TestDevices.cs" />
     <ProjectReference Include="..\..\src\LabelStudio.Devices\LabelStudio.Devices.csproj" />
   </ItemGroup>
 </Project>
