@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Status.Ready.Pill" xml:space="preserve"><value>{0} · Ready</value></data>
+  <data name="Status.Ready.Title" xml:space="preserve"><value>Ready</value></data>
+  <data name="Status.Ready.Body" xml:space="preserve"><value>The printer is ready to print.</value></data>
+  <data name="Status.Paused.Pill" xml:space="preserve"><value>{0} · Paused</value></data>
+  <data name="Status.Paused.Title" xml:space="preserve"><value>Paused</value></data>
+  <data name="Status.Paused.Body" xml:space="preserve"><value>The printer is paused. Choose Resume to continue printing.</value></data>
+  <data name="Status.HeadOpen.Pill" xml:space="preserve"><value>{0} · Head open</value></data>
+  <data name="Status.HeadOpen.Title" xml:space="preserve"><value>Print head open</value></data>
+  <data name="Status.HeadOpen.Body" xml:space="preserve"><value>The print head is open. Close the cover until it clicks, then choose Retry.</value></data>
+  <data name="Status.MediaOut.Pill" xml:space="preserve"><value>{0} · Media out</value></data>
+  <data name="Status.MediaOut.Title" xml:space="preserve"><value>Media out</value></data>
+  <data name="Status.MediaOut.Body" xml:space="preserve"><value>Printer reported media out. Load labels and close the cover, then choose Retry.</value></data>
+  <data name="Status.RibbonOut.Pill" xml:space="preserve"><value>{0} · Ribbon out</value></data>
+  <data name="Status.RibbonOut.Title" xml:space="preserve"><value>Ribbon out</value></data>
+  <data name="Status.RibbonOut.Body" xml:space="preserve"><value>The ribbon has run out or is not loaded. Load a 74 m ribbon roll and close the cover, then choose Retry.</value></data>
+  <data name="Status.OverTemperature.Pill" xml:space="preserve"><value>{0} · Head too hot</value></data>
+  <data name="Status.OverTemperature.Title" xml:space="preserve"><value>Print head too hot</value></data>
+  <data name="Status.OverTemperature.Body" xml:space="preserve"><value>The print head is over temperature and printing has stopped. Let it cool for a few minutes; printing resumes on its own.</value></data>
+  <data name="Status.UnderTemperature.Pill" xml:space="preserve"><value>{0} · Head too cold</value></data>
+  <data name="Status.UnderTemperature.Title" xml:space="preserve"><value>Print head too cold</value></data>
+  <data name="Status.UnderTemperature.Body" xml:space="preserve"><value>The print head is below operating temperature. Move the printer somewhere warmer than 5 °C.</value></data>
+  <data name="Status.Connecting.Pill" xml:space="preserve"><value>Connecting…</value></data>
+  <data name="Status.Connecting.Title" xml:space="preserve"><value>Connecting</value></data>
+  <data name="Status.Connecting.Body" xml:space="preserve"><value>Reading the printer's configuration and checking which settings it supports.</value></data>
+  <data name="Status.Claimed.Pill" xml:space="preserve"><value>Printer busy</value></data>
+  <data name="Status.Claimed.Title" xml:space="preserve"><value>Printer is in use by another program</value></data>
+  <data name="Status.Claimed.Body" xml:space="preserve"><value>Windows found the printer, but another program is holding it. Close ZebraDesigner or Zebra Setup Utilities, then choose Reconnect.</value></data>
+  <data name="Status.Unplugged.Pill" xml:space="preserve"><value>Disconnected · Reconnect</value></data>
+  <data name="Status.Unplugged.Title" xml:space="preserve"><value>Printer unplugged</value></data>
+  <data name="Status.Unplugged.Body" xml:space="preserve"><value>The printer was disconnected from USB. Plug the cable back in and it will reconnect automatically.</value></data>
+  <data name="Status.NotFound.Pill" xml:space="preserve"><value>Disconnected · Reconnect</value></data>
+  <data name="Status.NotFound.Title" xml:space="preserve"><value>Printer not found</value></data>
+  <data name="Status.NotFound.Body" xml:space="preserve"><value>The printer is no longer on USB. Check the cable and power, then choose Reconnect.</value></data>
+  <data name="Status.NotResponding.Pill" xml:space="preserve"><value>Disconnected · Reconnect</value></data>
+  <data name="Status.NotResponding.Title" xml:space="preserve"><value>Printer not responding</value></data>
+  <data name="Status.NotResponding.Body" xml:space="preserve"><value>The printer stopped answering. Check that it is switched on and the USB cable is secure, then choose Reconnect.</value></data>
+  <data name="Status.ChoosePrinter.Pill" xml:space="preserve"><value>Choose a printer</value></data>
+  <data name="Status.ChoosePrinter.Title" xml:space="preserve"><value>Choose a printer</value></data>
+  <data name="Status.ChoosePrinter.Body" xml:space="preserve"><value>More than one printer is connected. Select the one to use.</value></data>
+  <data name="Status.NoPrinter.Pill" xml:space="preserve"><value>No printer</value></data>
+  <data name="Status.NoPrinter.Title" xml:space="preserve"><value>No printer found</value></data>
+  <data name="Status.NoPrinter.Body" xml:space="preserve"><value>No Zebra printer is connected over USB. Check the cable and power. On a new ZD220, remove the sticker covering the USB port.</value></data>
+  <data name="StatusAction.Reconnect" xml:space="preserve"><value>Reconnect</value></data>
+  <data name="StatusAction.Resume" xml:space="preserve"><value>Resume</value></data>
+  <data name="StatusAction.Retry" xml:space="preserve"><value>Retry</value></data>
+  <data name="StatusAction.OpenPrinters" xml:space="preserve"><value>Open Printers</value></data>
+  <data name="Row.Model" xml:space="preserve"><value>Model</value></data>
+  <data name="Row.Serial" xml:space="preserve"><value>Serial number</value></data>
+  <data name="Row.Firmware" xml:space="preserve"><value>Firmware</value></data>
+  <data name="Row.Resolution" xml:space="preserve"><value>Resolution</value></data>
+  <data name="Row.Memory" xml:space="preserve"><value>Memory</value></data>
+  <data name="Row.Languages" xml:space="preserve"><value>Printer language</value></data>
+  <data name="Row.MediaType" xml:space="preserve"><value>Media type</value></data>
+  <data name="Row.PrintMethod" xml:space="preserve"><value>Print method</value></data>
+  <data name="Row.PrintMode" xml:space="preserve"><value>Print mode</value></data>
+  <data name="Row.LabelLength" xml:space="preserve"><value>Label length</value></data>
+  <data name="Row.PrintWidth" xml:space="preserve"><value>Print width</value></data>
+  <data name="Row.Darkness" xml:space="preserve"><value>Darkness</value></data>
+  <data name="Row.PrintSpeed" xml:space="preserve"><value>Print speed</value></data>
+  <data name="Row.TearOff" xml:space="preserve"><value>Tear-off position</value></data>
+  <data name="Format.Resolution" xml:space="preserve"><value>{0} dpi ({1} dots/mm)</value></data>
+  <data name="Format.Dots" xml:space="preserve"><value>{0} dots · {1:0.00} in · {2:0.0} mm</value></data>
+  <data name="Format.Speed" xml:space="preserve"><value>{0} ips</value></data>
+  <data name="Printers.NoSelection" xml:space="preserve"><value>Printers</value></data>
+  <data name="Printers.Pause" xml:space="preserve"><value>Pause</value></data>
+  <data name="Printers.Resume" xml:space="preserve"><value>Resume</value></data>
+  <data name="Printers.CommandError" xml:space="preserve"><value>Couldn't complete that on the printer: {0}</value></data>
+  <data name="Command.UnexpectedError" xml:space="preserve"><value>Something went wrong. Try again; if it keeps happening, restart the app.</value></data>
+  <data name="Printers.Hint.NotConnected" xml:space="preserve"><value>Connect a printer to use these actions.</value></data>
+  <data name="Printers.Hint.Fault" xml:space="preserve"><value>Clear the printer fault to print or feed.</value></data>
+  <data name="Printers.Hint.Paused" xml:space="preserve"><value>Resume the printer to print a test label.</value></data>
+  <data name="Sgd.Responded" xml:space="preserve"><value>Responded</value></data>
+  <data name="Sgd.NoResponse" xml:space="preserve"><value>No response</value></data>
+</root>

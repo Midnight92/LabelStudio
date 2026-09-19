@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>$(WindowsTfm)</TargetFramework></PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <ProjectReference Include="..\LabelStudio.Devices\LabelStudio.Devices.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- The SDK's default manifest-resource-name heuristic drops the "Resources" folder segment when a
+         .resx has no matching .cs (Strings.cs is a hand-written accessor, not a Designer file), so pin the
+         name explicitly to match Resources/Strings.cs's ResourceManager("LabelStudio.ViewModels.Resources.Strings", ...). -->
+    <EmbeddedResource Update="Resources\Strings.resx">
+      <LogicalName>LabelStudio.ViewModels.Resources.Strings.resources</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+</Project>

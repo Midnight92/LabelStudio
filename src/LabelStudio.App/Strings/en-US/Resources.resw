@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitleBar.Title" xml:space="preserve"><value>Label Studio</value></data>
+  <data name="Nav_Home.Content" xml:space="preserve"><value>Home</value></data>
+  <data name="Nav_QuickPrint.Content" xml:space="preserve"><value>Quick Print</value></data>
+  <data name="Nav_Printers.Content" xml:space="preserve"><value>Printers</value></data>
+  <data name="Nav_Designer.Content" xml:space="preserve"><value>Designer</value></data>
+  <data name="Nav_Templates.Content" xml:space="preserve"><value>Templates</value></data>
+  <data name="Nav_Queue.Content" xml:space="preserve"><value>Print queue</value></data>
+  <data name="Placeholder_GoToPrinters.Content" xml:space="preserve"><value>Go to Printers</value></data>
+  <data name="Placeholder_home_Title" xml:space="preserve"><value>Home</value></data>
+  <data name="Placeholder_home_Body" xml:space="preserve"><value>Recent templates, printer cards and quick actions arrive in milestone M2.</value></data>
+  <data name="Placeholder_quickprint_Title" xml:space="preserve"><value>Quick Print</value></data>
+  <data name="Placeholder_quickprint_Body" xml:space="preserve"><value>Printing a finished template from a few prompt fields arrives in milestone M4.</value></data>
+  <data name="Placeholder_designer_Title" xml:space="preserve"><value>Designer</value></data>
+  <data name="Placeholder_designer_Body" xml:space="preserve"><value>The label canvas, barcodes and live ZPL preview arrive in milestone M3.</value></data>
+  <data name="Placeholder_templates_Title" xml:space="preserve"><value>Templates</value></data>
+  <data name="Placeholder_templates_Body" xml:space="preserve"><value>The template library with versions and ZPL import arrives in milestone M4.</value></data>
+  <data name="Placeholder_queue_Title" xml:space="preserve"><value>Print queue</value></data>
+  <data name="Placeholder_queue_Body" xml:space="preserve"><value>Job queue, history and reprint arrive in milestone M4.</value></data>
+  <data name="Placeholder_settings_Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Placeholder_settings_Body" xml:space="preserve"><value>Units, theme and density settings arrive in milestone M2.</value></data>
+  <data name="Printers_ListHeader.Text" xml:space="preserve"><value>USB printers</value></data>
+  <data name="Printers_Refresh.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Refresh (F5)</value></data>
+  <data name="Printers_Refresh.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Refresh printers</value></data>
+  <data name="Printers_CurrentBadge.Text" xml:space="preserve"><value>In use</value></data>
+  <data name="Printers_EmptyList.Text" xml:space="preserve"><value>No Zebra printer found on USB. Check the cable and power, then choose Refresh.</value></data>
+  <data name="Printers_EmptyRefresh.Content" xml:space="preserve"><value>Search again</value></data>
+  <data name="Printers_Feed.Content" xml:space="preserve"><value>Feed label</value></data>
+  <data name="Printers_TestLabel.Content" xml:space="preserve"><value>Print test label</value></data>
+  <data name="Printers_Overview.Text" xml:space="preserve"><value>Overview</value></data>
+  <data name="Printers_Capabilities.Text" xml:space="preserve"><value>Capabilities</value></data>
+  <data name="Printers_IdentityCard.Text" xml:space="preserve"><value>Identity</value></data>
+  <data name="Printers_MediaCard.Text" xml:space="preserve"><value>Media</value></data>
+  <data name="Printers_OverviewEmpty.Text" xml:space="preserve"><value>Connect a printer to see its identity and media settings.</value></data>
+  <data name="Printers_CapabilitiesIntro.Text" xml:space="preserve"><value>Settings this printer answered when probed. Settings it did not answer stay hidden elsewhere in the app.</value></data>
+  <data name="Printers_Reprobe.Content" xml:space="preserve"><value>Probe again</value></data>
+  <data name="Printers_CapabilitiesEmpty.Text" xml:space="preserve"><value>Connect a printer to see which settings it supports.</value></data>
+</root>
