@@ -4,6 +4,9 @@
     <Platform Name="Any CPU" />
   </Configurations>
   <Folder Name="/src/">
+    <Project Path="src/LabelStudio.App/LabelStudio.App.csproj">
+      <Platform Project="x64" />
+    </Project>
     <Project Path="src/LabelStudio.Core/LabelStudio.Core.csproj" />
     <Project Path="src/LabelStudio.Devices/LabelStudio.Devices.csproj" />
     <Project Path="src/LabelStudio.ViewModels/LabelStudio.ViewModels.csproj" />

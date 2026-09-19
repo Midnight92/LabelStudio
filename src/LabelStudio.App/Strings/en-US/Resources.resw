@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AppTitleBar.Title" xml:space="preserve"><value>ZD220 Label Studio</value></data>
+  <data name="Nav_Home.Content" xml:space="preserve"><value>Home</value></data>
+  <data name="Nav_QuickPrint.Content" xml:space="preserve"><value>Quick Print</value></data>
+  <data name="Nav_Printers.Content" xml:space="preserve"><value>Printers</value></data>
+  <data name="Nav_Designer.Content" xml:space="preserve"><value>Designer</value></data>
+  <data name="Nav_Templates.Content" xml:space="preserve"><value>Templates</value></data>
+  <data name="Nav_Queue.Content" xml:space="preserve"><value>Print queue</value></data>
+  <data name="Placeholder_GoToPrinters.Content" xml:space="preserve"><value>Go to Printers</value></data>
+  <data name="Placeholder_home_Title" xml:space="preserve"><value>Home</value></data>
+  <data name="Placeholder_home_Body" xml:space="preserve"><value>Recent templates, printer cards and quick actions arrive in milestone M2.</value></data>
+  <data name="Placeholder_quickprint_Title" xml:space="preserve"><value>Quick Print</value></data>
+  <data name="Placeholder_quickprint_Body" xml:space="preserve"><value>Printing a finished template from a few prompt fields arrives in milestone M4.</value></data>
+  <data name="Placeholder_designer_Title" xml:space="preserve"><value>Designer</value></data>
+  <data name="Placeholder_designer_Body" xml:space="preserve"><value>The label canvas, barcodes and live ZPL preview arrive in milestone M3.</value></data>
+  <data name="Placeholder_templates_Title" xml:space="preserve"><value>Templates</value></data>
+  <data name="Placeholder_templates_Body" xml:space="preserve"><value>The template library with versions and ZPL import arrives in milestone M4.</value></data>
+  <data name="Placeholder_queue_Title" xml:space="preserve"><value>Print queue</value></data>
+  <data name="Placeholder_queue_Body" xml:space="preserve"><value>Job queue, history and reprint arrive in milestone M4.</value></data>
+  <data name="Placeholder_settings_Title" xml:space="preserve"><value>Settings</value></data>
+  <data name="Placeholder_settings_Body" xml:space="preserve"><value>Units, theme and density settings arrive in milestone M2.</value></data>
+  <data name="Placeholder_printers_Title" xml:space="preserve"><value>Printers</value></data>
+  <data name="Placeholder_printers_Body" xml:space="preserve"><value>The printer dashboard is added in the next task. (Task 10 stops routing here; delete these two entries then.)</value></data>
+</root>
