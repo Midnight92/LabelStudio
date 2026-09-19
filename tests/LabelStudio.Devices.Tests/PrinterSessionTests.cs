@@ -25,7 +25,7 @@ public class PrinterSessionTests
     public async Task Reads_host_identification()
     {
         var (session, _) = await OpenAsync();
-        Assert.Equal("ZD220-203dpi", (await session.GetHostIdentificationAsync(CancellationToken.None)).Model);
+        Assert.Equal("ZD220-200dpi", (await session.GetHostIdentificationAsync(CancellationToken.None)).Model);
     }
 
     [Fact]

@@ -8,7 +8,7 @@ namespace LabelStudio.Devices.Simulation;
 public sealed partial class SimulatedPrinter
 {
     public string Serial { get; init; } = "SIM0000000001";
-    public string Model { get; init; } = "ZD220-203dpi";
+    public string Model { get; init; } = "ZD220-200dpi";
     public string Firmware { get; init; } = "V84.20.21Z";
     public bool HeadUp { get; set; }
     public bool PaperOut { get; set; }

@@ -33,7 +33,7 @@ public class CapabilityProberTests
     {
         var (session, _) = await OpenAsync();
         var profile = await Prober.ProbeAsync(session, "USBSERIAL", new HashSet<string>(), CancellationToken.None);
-        Assert.Equal("ZD220-203dpi", profile.Model);
+        Assert.Equal("ZD220-200dpi", profile.Model);
         Assert.Equal(8, profile.DotsPerMm);
         Assert.Equal(PrintMethod.ThermalTransfer, profile.PrintMethod);
         Assert.Equal("ZD220t", profile.VariantName);
