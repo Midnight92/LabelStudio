@@ -37,6 +37,8 @@ public sealed partial class CalibrationViewModel : ObservableObject, IDisposable
     [ObservableProperty] public partial string? FailureTitle { get; set; }
     [ObservableProperty] public partial string? FailureBody { get; set; }
     [ObservableProperty] public partial bool ShowCompatibilityAction { get; set; }
+    /// <summary>The printer re-measured the same label length: a success, but the UI must not imply something changed.</summary>
+    [ObservableProperty] public partial bool MeasuredNoChange { get; set; }
     [ObservableProperty] public partial bool SuggestCalibration { get; set; }
     [ObservableProperty] public partial string? CommandError { get; set; }
 
@@ -93,6 +95,7 @@ public sealed partial class CalibrationViewModel : ObservableObject, IDisposable
     {
         if (result is null) { State = CalibrationUiState.Idle; return; }
         DetectedRows.Clear();
+        MeasuredNoChange = result.MeasuredNoChange;
         if (result.Succeeded)
         {
             var dotsPerMm = _devices.Snapshot.Profile?.DotsPerMm ?? 8;

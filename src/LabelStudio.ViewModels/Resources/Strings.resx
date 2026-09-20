@@ -79,6 +79,7 @@
   <data name="Sgd.NoResponse" xml:space="preserve"><value>No response</value></data>
   <data name="Settings.BackupFailed" xml:space="preserve"><value>Couldn't save a backup of the printer's settings, so nothing was changed. Check that there is free disk space, then try again.</value></data>
   <data name="Calibration.FeedNotice" xml:space="preserve"><value>Calibration feeds about {0} labels while the printer measures the media.</value></data>
+  <data name="Calibration.NoChange" xml:space="preserve"><value>The printer measured the same label length as before, so nothing changed.</value></data>
   <data name="Calibration.Check.Media.Ok" xml:space="preserve"><value>Labels are loaded</value></data>
   <data name="Calibration.Check.Media.Problem" xml:space="preserve"><value>No labels detected — load labels first</value></data>
   <data name="Calibration.Check.Cover.Ok" xml:space="preserve"><value>Cover is closed</value></data>

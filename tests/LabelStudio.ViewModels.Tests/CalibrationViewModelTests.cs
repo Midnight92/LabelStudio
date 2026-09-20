@@ -50,6 +50,25 @@ public class CalibrationViewModelTests
 
         Assert.Equal(CalibrationUiState.Succeeded, vm.State);
         Assert.Contains(vm.DetectedRows, r => r.Value.StartsWith("209", StringComparison.Ordinal));
+        Assert.False(vm.MeasuredNoChange);
+    }
+
+    [Fact]
+    public async Task Same_measured_length_is_reported_as_no_change()
+    {
+        using var dir = new TempDir();
+        // Default SimulatedPrinter: CalibrationOutcome.LengthDots (1218) matches the starting zpl.label_length
+        // (1218), so the runner never sees a change and only concludes at the model's calibration timeout.
+        var printer = new SimulatedPrinter();
+        var (svc, _, _, time) = TestDevices.CreateTimed(dir, printer);
+        await using var _ = svc;
+        await svc.StartAsync(CancellationToken.None);
+        using var vm = new CalibrationViewModel(svc, new ImmediateDispatcher(), NullLogger<CalibrationViewModel>.Instance);
+
+        await TestDevices.DriveAsync(vm.RunSmartCalCommand.ExecuteAsync(null).ContinueWith(_ => true), time);
+
+        Assert.Equal(CalibrationUiState.Succeeded, vm.State);
+        Assert.True(vm.MeasuredNoChange);
     }
 
     [Fact]
