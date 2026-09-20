@@ -1,8 +1,10 @@
 using LabelStudio.Devices.Discovery;
+using LabelStudio.ViewModels.Status;
 
 namespace LabelStudio.ViewModels.Printers;
 
-public sealed record PrinterListItem(UsbPrinterInfo Info, string Name, string Serial, bool IsCurrent);
+/// <param name="Status">The current printer's status (dot + text on the row, M1 audit #6); null for other printers.</param>
+public sealed record PrinterListItem(UsbPrinterInfo Info, string Name, string Serial, bool IsCurrent, StatusPresentation? Status);
 
 public sealed record KeyValueRow(string Label, string Value);
 

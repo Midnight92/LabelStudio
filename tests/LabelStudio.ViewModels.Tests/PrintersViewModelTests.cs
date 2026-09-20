@@ -8,6 +8,7 @@ using LabelStudio.Devices.Simulation;
 using LabelStudio.Devices.Transport;
 using LabelStudio.Tests;
 using LabelStudio.ViewModels.Printers;
+using LabelStudio.ViewModels.Status;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 
@@ -45,7 +46,7 @@ public class PrintersViewModelTests
         var printer = new SimulatedPrinter();
         var (svc, _, _) = TestDevices.Create(dir, printer);
         await using var _ = svc;
-        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), NullLogger<PrintersViewModel>.Instance);
+        using var vm = Vms.Printers(svc, dir);
         await svc.StartAsync(CancellationToken.None);
 
         Assert.True(vm.IsConnected);
@@ -64,7 +65,7 @@ public class PrintersViewModelTests
         var printer = new SimulatedPrinter();
         var (svc, _, _) = TestDevices.Create(dir, printer);
         await using var _ = svc;
-        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), NullLogger<PrintersViewModel>.Instance);
+        using var vm = Vms.Printers(svc, dir);
         await svc.StartAsync(CancellationToken.None);
 
         Assert.NotEmpty(vm.ProbedKeys);
@@ -81,7 +82,7 @@ public class PrintersViewModelTests
         var printer = new SimulatedPrinter();
         var (svc, _, _) = TestDevices.Create(dir, printer);
         await using var _ = svc;
-        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), NullLogger<PrintersViewModel>.Instance);
+        using var vm = Vms.Printers(svc, dir);
         await svc.StartAsync(CancellationToken.None);
         await vm.PrintTestLabelCommand.ExecuteAsync(null);
         Assert.Single(printer.ReceivedJobs);
@@ -94,7 +95,7 @@ public class PrintersViewModelTests
         using var dir = new TempDir();
         var (svc, _, _) = TestDevices.Create(dir);
         await using var _ = svc;
-        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), NullLogger<PrintersViewModel>.Instance);
+        using var vm = Vms.Printers(svc, dir);
         await svc.StartAsync(CancellationToken.None);
         Assert.True(vm.HasNoPrinters);
         Assert.False(vm.PrintTestLabelCommand.CanExecute(null));
@@ -109,7 +110,7 @@ public class PrintersViewModelTests
         var printer = new SimulatedPrinter();
         var (svc, _, _) = TestDevices.Create(dir, printer);
         await using var _ = svc;
-        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), NullLogger<PrintersViewModel>.Instance);
+        using var vm = Vms.Printers(svc, dir);
         await svc.StartAsync(CancellationToken.None);
 
         printer.PaperOut = true;
@@ -128,7 +129,7 @@ public class PrintersViewModelTests
         var printer = new SimulatedPrinter();
         var (svc, _, _) = TestDevices.Create(dir, printer);
         await using var _ = svc;
-        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), NullLogger<PrintersViewModel>.Instance);
+        using var vm = Vms.Printers(svc, dir);
         await svc.StartAsync(CancellationToken.None);
 
         printer.Paused = true;
@@ -146,7 +147,7 @@ public class PrintersViewModelTests
         var printer = new SimulatedPrinter();
         var (svc, _, _) = TestDevices.Create(dir, printer);
         await using var _ = svc;
-        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), NullLogger<PrintersViewModel>.Instance);
+        using var vm = Vms.Printers(svc, dir);
         await svc.StartAsync(CancellationToken.None);
 
         Assert.True(vm.PrintTestLabelCommand.CanExecute(null));
@@ -161,7 +162,7 @@ public class PrintersViewModelTests
         var printer = new SimulatedPrinter();
         var (svc, _, _) = TestDevices.Create(dir, printer);
         await using var _ = svc;
-        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), NullLogger<PrintersViewModel>.Instance);
+        using var vm = Vms.Printers(svc, dir);
         var seen = new List<bool>();
         svc.SnapshotChanged += (_, _) => seen.Add(vm.IsConnecting);
 
@@ -183,7 +184,7 @@ public class PrintersViewModelTests
             new ProfileCache(dir.File("profiles")), new ConfigurationSnapshotStore(dir.File("backups")), settings,
             new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
         await using var _ = svc;
-        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), NullLogger<PrintersViewModel>.Instance);
+        using var vm = Vms.Printers(svc, dir);
         await svc.StartAsync(CancellationToken.None);
         Assert.True(vm.IsConnected); // connect itself doesn't touch "~PH", so it should succeed normally
 
@@ -199,7 +200,7 @@ public class PrintersViewModelTests
         var printer = new SimulatedPrinter();
         var (svc, _, _) = TestDevices.Create(dir, printer);
         await using var _ = svc;
-        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), NullLogger<PrintersViewModel>.Instance);
+        using var vm = Vms.Printers(svc, dir);
         await svc.StartAsync(CancellationToken.None);
 
         printer.PaperOut = true; // the simulator's ~HS reports Paused=true whenever PaperOut is true, like real firmware
@@ -221,7 +222,7 @@ public class PrintersViewModelTests
             new ConfigurationSnapshotStore(dir.File("backups")), settings,
             new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
         var log = new RecordingLogger<PrintersViewModel>();
-        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), log);
+        using var vm = Vms.Printers(svc, dir, log);
         await svc.StartAsync(CancellationToken.None);
 
         await vm.FeedCommand.ExecuteAsync(null);
@@ -240,12 +241,85 @@ public class PrintersViewModelTests
         var (svc, _, _) = TestDevices.Create(dir, printer);
         await using var _ = svc;
         var log = new RecordingLogger<PrintersViewModel>();
-        using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), log);
+        using var vm = Vms.Printers(svc, dir, log);
         await svc.StartAsync(CancellationToken.None);
         printer.Unplugged = true;
 
         await vm.FeedCommand.ExecuteAsync(null);
 
         Assert.Equal(Microsoft.Extensions.Logging.LogLevel.Warning, Assert.Single(log.Entries).Level);
+    }
+
+    [Fact]
+    public async Task Counters_show_printer_readings_and_an_app_counter_that_resets()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        var (svc, _, _) = TestDevices.Create(dir, printer);
+        await using var _ = svc;
+        using var vm = Vms.Printers(svc, dir);
+        await svc.StartAsync(CancellationToken.None);
+
+        Assert.True(vm.HasCounters);
+        Assert.Contains(vm.Counters, r => r.Value.Contains(4800.ToString("N0", System.Globalization.CultureInfo.CurrentCulture), StringComparison.Ordinal));
+        Assert.Equal("0", vm.AppCounterText);       // baseline taken on first sight
+
+        printer.Sgd[SgdKeys.OdometerUserLabels] = "1225";
+        await vm.RefreshCountersCommand.ExecuteAsync(null);
+        Assert.Equal("25", vm.AppCounterText);
+
+        vm.ResetCounterCommand.Execute(null);
+        Assert.Equal("0", vm.AppCounterText);
+    }
+
+    [Fact]
+    public async Task Deep_links_and_child_requests_select_tab_and_section()
+    {
+        using var dir = new TempDir();
+        var (svc, _, _) = TestDevices.Create(dir, new SimulatedPrinter());
+        await using var _ = svc;
+        using var vm = Vms.Printers(svc, dir);
+        await svc.StartAsync(CancellationToken.None);
+
+        vm.ApplyDeepLink(new PrinterDeepLink(PrinterTab.Calibration, PrinterSection.SmartCal));
+        Assert.Equal(PrinterTab.Calibration, vm.SelectedTab);
+        Assert.Equal(PrinterSection.SmartCal, vm.SelectedSection);
+
+        vm.EditMediaCommand.Execute(null);
+        Assert.Equal(PrinterSection.MediaSetup, vm.SelectedSection);
+
+        vm.Calibration.CheckCompatibilityCommand.Execute(null);
+        Assert.Equal(PrinterSection.Checker, vm.SelectedSection);
+
+        vm.Checker.UseLengthOnlyCommand.Execute(null);
+        Assert.Equal(PrinterSection.LengthOnly, vm.SelectedSection);
+    }
+
+    [Fact]
+    public async Task Blink_codes_link_navigates()
+    {
+        using var dir = new TempDir();
+        var (svc, _, _) = TestDevices.Create(dir, new SimulatedPrinter());
+        await using var _ = svc;
+        var navigation = new RecordingNavigation();
+        using var vm = Vms.Printers(svc, dir, navigation: navigation);
+        vm.OpenBlinkCodesCommand.Execute(null);
+        Assert.Equal([PageKeys.BlinkCodes], navigation.Visited);
+    }
+
+    [Fact]
+    public async Task Current_printer_row_carries_its_status()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        var (svc, _, _) = TestDevices.Create(dir, printer);
+        await using var _ = svc;
+        using var vm = Vms.Printers(svc, dir);
+        await svc.StartAsync(CancellationToken.None);
+        Assert.Equal(StatusTone.Success, Assert.Single(vm.Printers).Status!.Tone);
+
+        printer.PaperOut = true;
+        await svc.RefreshAsync(CancellationToken.None);
+        Assert.Equal(StatusTone.Critical, Assert.Single(vm.Printers).Status!.Tone);
     }
 }

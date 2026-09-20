@@ -97,6 +97,10 @@ public partial class App : Application
         services.AddSingleton<AppNotificationService>();
         services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<AppNotificationService>());
         services.AddSingleton<ShellViewModel>();
+        services.AddSingleton(_ => new UserCounterStore(AppDataPaths.CountersFile));
+        services.AddTransient<CalibrationViewModel>();
+        services.AddTransient<MediaSetupViewModel>();
+        services.AddTransient<CompatibilityCheckerViewModel>();
         services.AddTransient<PrintersViewModel>();
         return services.BuildServiceProvider();
     }
