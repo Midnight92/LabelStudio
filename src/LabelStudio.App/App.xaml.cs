@@ -79,6 +79,12 @@ public partial class App : Application
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
+        // First write to the file sink, which creates the log lazily: a clean run must still leave a log
+        // behind, because that is what a user is asked to send when something goes wrong later.
+        Services.GetRequiredService<ILogger<App>>().LogInformation(
+            "Label Studio starting (simulator: {Simulator})",
+            Environment.GetEnvironmentVariable("LABELSTUDIO_SIMULATOR") == "1");
+
         _window = new MainWindow();
         _window.Closed += (_, _) => _ = DisposeDevicesAsync();
         _window.Activate();
