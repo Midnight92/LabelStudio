@@ -113,20 +113,31 @@ public sealed class DeviceService : IAsyncDisposable
         }).ToList();
 
         await SaveSnapshotAsync(session, profile, "before-apply", ct);
-        foreach (var (key, value) in writes)
-        {
-            if (traits.WritableKeys[key] == WriteStrategy.Sgd) await session.SetSgdAsync(key, value, ct);
-            else await session.SendRawAsync(MediaSettingWriter.ToZpl(key, value), ct);
-        }
-
         var readBack = new Dictionary<string, string?>(StringComparer.Ordinal);
-        foreach (var (key, _) in writes) readBack[key] = await session.GetSgdAsync(key, SgdKeys.ProbeTimeout, ct);
-        var rejected = writes.Where(w => !MediaSettingWriter.Matches(w.Value, readBack[w.Key])).Select(w => w.Key).ToList();
+        var rejected = new List<string>();
         var settings = new Dictionary<string, string>(profile.Settings, StringComparer.Ordinal);
-        foreach (var (key, value) in readBack) if (value is not null) settings[key] = value;
         var pending = new HashSet<string>(Snapshot.PendingCommitKeys, StringComparer.Ordinal);
-        pending.UnionWith(writes.Select(w => w.Key).Except(rejected));
-        Publish(Snapshot with { Profile = profile with { Settings = settings }, PendingCommitKeys = pending });
+        try
+        {
+            foreach (var (key, value) in writes)
+            {
+                if (traits.WritableKeys[key] == WriteStrategy.Sgd) await session.SetSgdAsync(key, value, ct);
+                else await session.SendRawAsync(MediaSettingWriter.ToZpl(key, value), ct);
+
+                // Read each key back as it is written, not in a second pass. If a later write fails, the
+                // finally below still publishes what the printer actually holds — these values persist
+                // without ^JU S, so leaving the app showing the old ones would be a lie about the device.
+                var actual = await session.GetSgdAsync(key, SgdKeys.ProbeTimeout, ct);
+                readBack[key] = actual;
+                if (actual is not null) settings[key] = actual;
+                if (MediaSettingWriter.Matches(value, actual)) pending.Add(key);
+                else rejected.Add(key);
+            }
+        }
+        finally
+        {
+            Publish(Snapshot with { Profile = profile with { Settings = settings }, PendingCommitKeys = pending });
+        }
         return new ApplyResult(readBack, rejected);
     }, ct);
 

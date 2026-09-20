@@ -1,7 +1,12 @@
+using LabelStudio.Core;
 using LabelStudio.Devices.Capabilities;
+using LabelStudio.Devices.Discovery;
 using LabelStudio.Devices.Settings;
 using LabelStudio.Devices.Simulation;
+using LabelStudio.Devices.Transport;
 using LabelStudio.Tests;
+using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 
 namespace LabelStudio.Devices.Tests;
 
@@ -20,6 +25,27 @@ public class DeviceServiceSettingsTests
             Saved.Add((snapshot, printer.SetVarRequests.Count));
             return "memory";
         }
+    }
+
+    /// <summary>Fails the first write containing <paramref name="trigger"/>, modelling a USB write dying mid-apply.</summary>
+    private sealed class FailingTransport(SimulatedPrinter printer, string trigger) : IPrinterTransport
+    {
+        private readonly SimulatedPrinterTransport _inner = new(printer);
+
+        public Task OpenAsync(CancellationToken ct) => _inner.OpenAsync(ct);
+
+        public Task WriteAsync(ReadOnlyMemory<byte> data, CancellationToken ct) =>
+            System.Text.Encoding.UTF8.GetString(data.Span).Contains(trigger, StringComparison.Ordinal)
+                ? throw new IOException("Simulated USB write failure mid-apply.")
+                : _inner.WriteAsync(data, ct);
+
+        public Task<int> ReadAsync(Memory<byte> buffer, TimeSpan timeout, CancellationToken ct) => _inner.ReadAsync(buffer, timeout, ct);
+        public ValueTask DisposeAsync() => _inner.DisposeAsync();
+    }
+
+    private sealed class FailingTransportFactory(SimulatedPrinter printer, string trigger) : ITransportFactory
+    {
+        public IPrinterTransport Create(UsbPrinterInfo info) => new FailingTransport(printer, trigger);
     }
 
     [Fact]
@@ -106,6 +132,35 @@ public class DeviceServiceSettingsTests
         Assert.Equal([SgdKeys.Darkness], result.Rejected);
         Assert.Equal("20.0", svc.Snapshot.Profile!.Get(SgdKeys.Darkness));
         Assert.Empty(svc.Snapshot.PendingCommitKeys);
+    }
+
+    /// <summary>
+    /// A multi-key apply that fails part-way must still publish what the printer actually holds: an earlier
+    /// setvar in the same call already reached the printer and, on this hardware, persists without ^JU S, so
+    /// leaving the app showing the pre-apply values would be a lie about the device state.
+    /// </summary>
+    [Fact]
+    public async Task Publishes_what_the_printer_holds_when_a_multikey_apply_fails_partway()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        var discovery = new SimulatedDiscovery(printer);
+        var settings = new SettingsService(new JsonFileStore<AppSettings>(dir.File("settings.json")));
+        await using var svc = new DeviceService(
+            discovery, new FailingTransportFactory(printer, "setvar \"ezpl.print_width\""), new CapabilityProber(TimeSpan.FromMilliseconds(50)),
+            new ProfileCache(dir.File("profiles")), new ConfigurationSnapshotStore(dir.File("backups")), settings,
+            new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
+        await svc.StartAsync(None);
+
+        await Assert.ThrowsAsync<IOException>(() =>
+            svc.ApplySettingsAsync(new Dictionary<string, string> { [SgdKeys.Darkness] = "16", [SgdKeys.PrintWidth] = "320" }, None));
+
+        // Order-independent: whichever key was written before the failure, the published profile must match
+        // what the simulator actually holds for both keys.
+        foreach (var key in new[] { SgdKeys.Darkness, SgdKeys.PrintWidth })
+            Assert.Equal(printer.Sgd[key], svc.Snapshot.Profile!.Get(key));
+        // At least one key must have actually landed, so this can't pass vacuously by writing nothing.
+        Assert.True(printer.Sgd[SgdKeys.Darkness] != "20.0" || printer.Sgd[SgdKeys.PrintWidth] != "812");
     }
 
     [Fact]
