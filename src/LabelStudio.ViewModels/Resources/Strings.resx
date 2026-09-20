@@ -78,4 +78,39 @@
   <data name="Sgd.Responded" xml:space="preserve"><value>Responded</value></data>
   <data name="Sgd.NoResponse" xml:space="preserve"><value>No response</value></data>
   <data name="Settings.BackupFailed" xml:space="preserve"><value>Couldn't save a backup of the printer's settings, so nothing was changed. Check that there is free disk space, then try again.</value></data>
+  <data name="BlinkCode.Kind.LedPattern" xml:space="preserve"><value>Status light</value></data>
+  <data name="BlinkCode.Kind.FeedSequence" xml:space="preserve"><value>FEED button</value></data>
+  <data name="BlinkCode.Source" xml:space="preserve"><value>Zebra user guide, {0}</value></data>
+  <data name="BlinkCodes.Heading" xml:space="preserve"><value>{0} lights and button</value></data>
+  <data name="BlinkCodes.HeadingAll" xml:space="preserve"><value>Printer lights and button</value></data>
+  <data name="BlinkCode.ZD220.SolidGreen.Pattern" xml:space="preserve"><value>Solid green</value></data>
+  <data name="BlinkCode.ZD220.SolidGreen.Meaning" xml:space="preserve"><value>The printer is ready for print and data activity.</value></data>
+  <data name="BlinkCode.ZD220.SolidGreen.Action" xml:space="preserve"><value>No action needed; the printer is ready to print.</value></data>
+  <data name="BlinkCode.ZD220.FlashingGreen.Pattern" xml:space="preserve"><value>Flashing green</value></data>
+  <data name="BlinkCode.ZD220.FlashingGreen.Meaning" xml:space="preserve"><value>Normal operation; the printer is communicating or processing data.</value></data>
+  <data name="BlinkCode.ZD220.FlashingGreen.Action" xml:space="preserve"><value>Wait for the light to turn solid green before sending another job.</value></data>
+  <data name="BlinkCode.ZD220.DoubleFlashingGreen.Pattern" xml:space="preserve"><value>Double-flashing green (two short flashes, one long flash)</value></data>
+  <data name="BlinkCode.ZD220.DoubleFlashingGreen.Meaning" xml:space="preserve"><value>The printer is paused.</value></data>
+  <data name="BlinkCode.ZD220.DoubleFlashingGreen.Action" xml:space="preserve"><value>Press FEED, or choose Resume in the app, to continue printing.</value></data>
+  <data name="BlinkCode.ZD220.FlashingRed.Pattern" xml:space="preserve"><value>Flashing red</value></data>
+  <data name="BlinkCode.ZD220.FlashingRed.Meaning" xml:space="preserve"><value>The printer is open, out of media, unable to sense the loaded media, or detecting a cut error.</value></data>
+  <data name="BlinkCode.ZD220.FlashingRed.Action" xml:space="preserve"><value>Close the cover and check that media is loaded and sensed correctly, then choose Retry.</value></data>
+  <data name="BlinkCode.ZD220.FlashingAmber.Pattern" xml:space="preserve"><value>Flashing amber</value></data>
+  <data name="BlinkCode.ZD220.FlashingAmber.Meaning" xml:space="preserve"><value>The print head is over temperature and must cool before printing resumes.</value></data>
+  <data name="BlinkCode.ZD220.FlashingAmber.Action" xml:space="preserve"><value>Let the printer cool; printing resumes on its own.</value></data>
+  <data name="BlinkCode.ZD220.FlashingRedRedGreen.Pattern" xml:space="preserve"><value>Flashing red, red, green</value></data>
+  <data name="BlinkCode.ZD220.FlashingRedRedGreen.Meaning" xml:space="preserve"><value>The print head or motor has failed.</value></data>
+  <data name="BlinkCode.ZD220.FlashingRedRedGreen.Action" xml:space="preserve"><value>Power the printer off and contact support; this fault isn't user-serviceable.</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedOneFlash.Pattern" xml:space="preserve"><value>Hold FEED 2 s, release at the first flash</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedOneFlash.Meaning" xml:space="preserve"><value>Prints a configuration report and exits Advanced mode.</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedOneFlash.Action" xml:space="preserve"><value>With the printer ready, hold FEED for 2 seconds and release as soon as the light flashes once.</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedTwoFlashes.Pattern" xml:space="preserve"><value>Hold FEED, release at the second flash</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedTwoFlashes.Meaning" xml:space="preserve"><value>Runs Smart Cal to measure the loaded media and set its sensing parameters.</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedTwoFlashes.Action" xml:space="preserve"><value>Keep holding FEED past the first flash and release at the second flash.</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedThreeFlashes.Pattern" xml:space="preserve"><value>Hold FEED, release at the third flash</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedThreeFlashes.Meaning" xml:space="preserve"><value>Resets the printer to its factory default settings.</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedThreeFlashes.Action" xml:space="preserve"><value>Keep holding FEED past the second flash and release at the third flash.</value></data>
+  <data name="BlinkCode.ZD220.ReleaseFeedAfterThirdFlash.Pattern" xml:space="preserve"><value>Hold FEED 2 s or more past the third flash</value></data>
+  <data name="BlinkCode.ZD220.ReleaseFeedAfterThirdFlash.Meaning" xml:space="preserve"><value>Exits Advanced mode without making a change and returns to normal operation.</value></data>
+  <data name="BlinkCode.ZD220.ReleaseFeedAfterThirdFlash.Action" xml:space="preserve"><value>Keep holding FEED for 2 or more seconds after the third flash, then release.</value></data>
 </root>
