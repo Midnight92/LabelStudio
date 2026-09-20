@@ -96,6 +96,7 @@ public partial class App : Application
         services.AddSingleton<IAppActivityState>(sp => sp.GetRequiredService<WindowActivityState>());
         services.AddSingleton<AppNotificationService>();
         services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<AppNotificationService>());
+        services.AddSingleton<FaultNotifier>();
         services.AddSingleton<ShellViewModel>();
         services.AddSingleton(_ => new UserCounterStore(AppDataPaths.CountersFile));
         services.AddTransient<CalibrationViewModel>();
@@ -134,6 +135,9 @@ public partial class App : Application
         if (activation.Kind == Microsoft.Windows.AppLifecycle.ExtendedActivationKind.AppNotification
             && activation.Data is Microsoft.Windows.AppNotifications.AppNotificationActivatedEventArgs toast)
             notifications.Route(toast.Arguments);
+
+        // Instantiate now so it subscribes to DeviceService.SnapshotChanged before the first snapshot arrives.
+        Services.GetRequiredService<FaultNotifier>();
 
         try
         {
