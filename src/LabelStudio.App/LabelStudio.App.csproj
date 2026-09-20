@@ -10,7 +10,12 @@
     <UseWinUI>true</UseWinUI>
     <WinUISDKReferences>false</WinUISDKReferences>
     <WindowsPackageType>None</WindowsPackageType>
-    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <!-- Framework-dependent, not self-contained: AppNotificationManager.Register() fails in a
+         self-contained build (0x8007007E - Microsoft.WindowsAppRuntime.Insights.Resource.dll is not in
+         the self-contained asset set for Windows App SDK 2.5.1), so fault toasts (spec §5) cannot work.
+         This requires the Windows App Runtime 2.5.1 redistributable on the machine; MSIX packaging (M5)
+         removes that requirement. -->
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
     <!-- XAML-generated code emits warnings we do not own. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <!-- Custom Program.Main for single-instancing (M1 carry-in; Windows App SDK app-lifecycle docs). -->

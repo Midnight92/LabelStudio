@@ -26,9 +26,17 @@ public static class Program
         var main = AppInstance.FindOrRegisterForKey(InstanceKey);
         if (!main.IsCurrent)
         {
-            // Block on a pool thread: an await here would resume off the STA thread.
-            Task.Run(() => main.RedirectActivationToAsync(activation).AsTask()).Wait();
-            return 0;
+            try
+            {
+                // Block on a pool thread: an await here would resume off the STA thread.
+                Task.Run(() => main.RedirectActivationToAsync(activation).AsTask()).Wait();
+                return 0;
+            }
+            catch (Exception)
+            {
+                // The primary went away between registering and redirecting; fall through and start
+                // normally rather than dying with an unhandled exception on a benign second launch.
+            }
         }
 
         main.Activated += (_, e) => App.OnRedirectedActivation(e);
