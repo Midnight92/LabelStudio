@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using System.Text.RegularExpressions;
 using LabelStudio.Devices;
 using LabelStudio.Devices.Capabilities;
 using LabelStudio.Devices.Discovery;
@@ -10,13 +11,17 @@ using LabelStudio.Devices.Transport;
 namespace LabelStudio.Probe;
 
 /// <summary>
-/// M2a hardware questions (plan Task 1). Interactive: asks the operator to power-cycle the printer and to
-/// count fed labels. Every setting it changes is restored before it exits; nothing is committed with ^JUS
-/// except the explicit restore in question 1.
+/// M2a hardware questions (plan Task 1) plus the Task 1b follow-up: a verified setvar helper (the first run
+/// found that a setvar immediately followed by a getvar can read back stale on this firmware — see
+/// docs/hardware/zd220t-m2a-investigation.md Q3), a `--set` phase to put the printer back to a known state,
+/// and a `--calibrate-only` phase that records what changes during ~JC without touching any setting.
+/// Interactive: asks the operator to power-cycle the printer and to count fed labels. Every setting the
+/// investigation phase changes is restored (with the verified helper) before it exits.
 /// </summary>
 internal static class Investigation
 {
     private static readonly TimeSpan KeyTimeout = TimeSpan.FromMilliseconds(800);
+    private static readonly Regex ValidSgdKey = new("^[a-z0-9._]+$", RegexOptions.Compiled);
 
     public static async Task<int> RunAsync(string? outOption, CancellationToken ct)
     {
@@ -41,8 +46,7 @@ internal static class Investigation
             else
             {
                 var testTone = originalTone.StartsWith("16", StringComparison.Ordinal) ? "17.0" : "16.0";
-                await SetVarAsync(session, SgdKeys.Darkness, testTone, ct);
-                var afterSet = await session.GetSgdAsync(SgdKeys.Darkness, KeyTimeout, ct);
+                var afterSet = await SetVarVerifiedAsync(session, SgdKeys.Darkness, testTone, ct);
                 Console.WriteLine($"print.tone was {originalTone}, setvar {testTone}, reads back {afterSet}.");
                 Console.WriteLine("Power-cycle the printer now (switch off, wait 5 s, switch on), wait for the light to go solid, then press Enter.");
                 Console.ReadLine();
@@ -55,7 +59,9 @@ internal static class Investigation
                   .AppendLine($"| original | `{originalTone}` |").AppendLine($"| after setvar {testTone} | `{afterSet}` |")
                   .AppendLine($"| after power cycle (no ^JUS) | `{afterCycle}` |").AppendLine()
                   .AppendLine($"**SetvarPersistsWithoutSave = {persists}**").AppendLine();
-                await SetVarAsync(session, SgdKeys.Darkness, originalTone, ct);
+                var restoredTone = await SetVarVerifiedAsync(session, SgdKeys.Darkness, originalTone, ct);
+                if (!RestoreConfirmed(restoredTone, originalTone))
+                    md.AppendLine($"**WARNING: could not restore `{SgdKeys.Darkness}`; printer left at `{restoredTone}`.**").AppendLine();
                 await session.SendRawAsync("^XA^JUS^XZ", ct);
             }
 
@@ -78,11 +84,16 @@ internal static class Investigation
               .AppendLine("| setvar value | reads back |").AppendLine("| --- | --- |");
             foreach (var candidate in new[] { "continuous", "gap/notch", "mark", "web", "blackmark" })
             {
-                await SetVarAsync(session, SgdKeys.MediaType, candidate, ct);
-                md.AppendLine($"| `{candidate}` | `{await session.GetSgdAsync(SgdKeys.MediaType, KeyTimeout, ct)}` |");
+                var readback = await SetVarVerifiedAsync(session, SgdKeys.MediaType, candidate, ct);
+                md.AppendLine($"| `{candidate}` | `{readback}` |");
             }
-            if (mediaType is not null) await SetVarAsync(session, SgdKeys.MediaType, mediaType, ct);
-            md.AppendLine().AppendLine($"Restored to `{await session.GetSgdAsync(SgdKeys.MediaType, KeyTimeout, ct)}`.").AppendLine();
+            if (mediaType is not null)
+            {
+                var restoredMediaType = await SetVarVerifiedAsync(session, SgdKeys.MediaType, mediaType, ct);
+                md.AppendLine().AppendLine($"Restored to `{restoredMediaType}`.").AppendLine();
+                if (!RestoreConfirmed(restoredMediaType, mediaType))
+                    md.AppendLine($"**WARNING: could not restore `{SgdKeys.MediaType}`; printer left at `{restoredMediaType}`.**").AppendLine();
+            }
 
             // Q4 + Q5 — ~JC behaviour and which keys change
             var status = await session.GetHostStatusAsync(ct);
@@ -139,6 +150,144 @@ internal static class Investigation
         }
     }
 
+    /// <summary>
+    /// Task 1b: puts the printer back to a known state (e.g. `ezpl.media_type=gap/notch`) using the verified
+    /// setvar helper, then exits — no questions, no `~JC`, no `^JUS`. Keys are validated before connecting so
+    /// a typo fails fast instead of talking to the printer first.
+    /// </summary>
+    public static async Task<int> RunSetAsync(IReadOnlyList<(string Key, string Value)> pairs, CancellationToken ct)
+    {
+        foreach (var (key, _) in pairs)
+        {
+            if (!ValidSgdKey.IsMatch(key))
+            {
+                Console.Error.WriteLine($"Invalid --set key '{key}': SGD keys must be lowercase letters, digits, dots and underscores only.");
+                return 1;
+            }
+        }
+
+        var (_, session) = await OpenFirstAsync(ct);
+        try
+        {
+            foreach (var (key, value) in pairs)
+            {
+                var before = await session.GetSgdAsync(key, KeyTimeout, ct);
+                var after = await SetVarVerifiedAsync(session, key, value, ct);
+                Console.WriteLine($"{key}: {before} -> {after}");
+            }
+            return 0;
+        }
+        finally
+        {
+            await session.DisposeAsync();
+        }
+    }
+
+    /// <summary>
+    /// Task 1b: runs only the calibration measurement (`~JC`) and records which observable values change,
+    /// to find a substitute for the missing "calibration finished" signal (Q4 found `~HS` answers Ready the
+    /// whole time). Changes nothing except what `~JC` itself changes — no restore needed.
+    /// </summary>
+    public static async Task<int> RunCalibrateOnlyAsync(string? outOption, CancellationToken ct)
+    {
+        var (printer, session) = await OpenFirstAsync(ct);
+        try
+        {
+            var status = await session.GetHostStatusAsync(ct);
+            var state = PrinterStateResolver.Resolve(status);
+            if (state != PrinterState.Ready)
+            {
+                Console.Error.WriteLine($"Printer is not Ready (state: {state}); calibration not started (media not wasted).");
+                return 1;
+            }
+
+            var profile = await new CapabilityProber().ProbeAsync(session, printer.Serial, new HashSet<string>(), ct);
+            var outPath = outOption ?? Path.Combine("docs", "hardware", $"{profile.VariantName.ToLowerInvariant()}-m2a-calibration.md");
+
+            var pollKeys = new[] { SgdKeys.LabelLength, SgdKeys.MediaType, SgdKeys.SenseMode, SgdKeys.OdometerUserLabels };
+            var preValues = new Dictionary<string, string?>(StringComparer.Ordinal);
+            foreach (var key in pollKeys) preValues[key] = profile.Get(key);
+            var printWidth = profile.Get(SgdKeys.PrintWidth);
+
+            Console.WriteLine($"Preflight: ~HS = {state}");
+            Console.WriteLine($"  {SgdKeys.MediaType} = {preValues[SgdKeys.MediaType]}");
+            Console.WriteLine($"  {SgdKeys.SenseMode} = {preValues[SgdKeys.SenseMode]}");
+            Console.WriteLine($"  {SgdKeys.LabelLength} = {preValues[SgdKeys.LabelLength]}");
+            Console.WriteLine($"  {SgdKeys.PrintWidth} = {printWidth}");
+            Console.WriteLine("Confirm the sensing mode above matches the loaded media before labels are fed.");
+
+            var md = new StringBuilder();
+            md.AppendLine($"# {profile.VariantName} — M2a calibration measurement").AppendLine()
+              .AppendLine($"Generated {DateTimeOffset.Now:yyyy-MM-dd HH:mm zzz} by `tools/LabelStudio.Probe --calibrate-only`, firmware {profile.Firmware}.").AppendLine()
+              .AppendLine("## Preflight").AppendLine()
+              .AppendLine("| Field | Value |").AppendLine("| --- | --- |")
+              .AppendLine($"| ~HS state | {state} |")
+              .AppendLine($"| `{SgdKeys.MediaType}` | `{preValues[SgdKeys.MediaType]}` |")
+              .AppendLine($"| `{SgdKeys.SenseMode}` | `{preValues[SgdKeys.SenseMode]}` |")
+              .AppendLine($"| `{SgdKeys.LabelLength}` | `{preValues[SgdKeys.LabelLength]}` |")
+              .AppendLine($"| `{SgdKeys.PrintWidth}` | `{printWidth}` |")
+              .AppendLine();
+
+            md.AppendLine("## Calibration poll (~JC)").AppendLine()
+              .AppendLine($"| t (ms) | ~HS | `{SgdKeys.LabelLength}` | `{SgdKeys.MediaType}` | `{SgdKeys.SenseMode}` | `{SgdKeys.OdometerUserLabels}` |")
+              .AppendLine("| --- | --- | --- | --- | --- | --- |");
+
+            var firstChangeMs = new Dictionary<string, long?>(StringComparer.Ordinal);
+            foreach (var key in pollKeys) firstChangeMs[key] = null;
+
+            await session.SendRawAsync("~JC", ct);
+            var clock = Stopwatch.StartNew();
+            while (clock.Elapsed < TimeSpan.FromSeconds(40))
+            {
+                var elapsed = clock.ElapsedMilliseconds;
+                string hsCell;
+                try
+                {
+                    var s = await session.GetHostStatusAsync(ct);
+                    hsCell = $"paperOut={s.PaperOut} paused={s.Paused} headUp={s.HeadUp} lengthDots={s.LabelLengthDots} formats={s.FormatsInBuffer} → {PrinterStateResolver.Resolve(s)}";
+                }
+                catch (Exception ex) when (ex is TimeoutException or PrinterProtocolException)
+                {
+                    hsCell = $"no answer ({ex.GetType().Name})";
+                }
+
+                var cells = new string?[pollKeys.Length];
+                for (var i = 0; i < pollKeys.Length; i++)
+                {
+                    var key = pollKeys[i];
+                    var value = await session.GetSgdAsync(key, KeyTimeout, ct);
+                    cells[i] = value;
+                    if (firstChangeMs[key] is null && value is not null && preValues[key] is not null &&
+                        !string.Equals(value, preValues[key], StringComparison.Ordinal))
+                        firstChangeMs[key] = elapsed;
+                }
+
+                md.AppendLine($"| {elapsed} | {hsCell} | `{cells[0]}` | `{cells[1]}` | `{cells[2]}` | `{cells[3]}` |");
+                await Task.Delay(250, ct);
+            }
+            md.AppendLine();
+
+            Console.Write("How many labels did the printer feed during calibration? ");
+            var fed = Console.ReadLine();
+            md.AppendLine($"**Labels fed by ~JC (operator count): {fed}**").AppendLine();
+
+            md.AppendLine("## Observations").AppendLine()
+              .AppendLine("| Key | First changed at (ms) |").AppendLine("| --- | --- |");
+            foreach (var key in pollKeys)
+                md.AppendLine($"| `{key}` | {(firstChangeMs[key] is { } ms ? ms.ToString() : "unchanged")} |");
+            md.AppendLine();
+
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(outPath))!);
+            await File.WriteAllTextAsync(outPath, md.ToString(), ct);
+            Console.WriteLine($"Wrote {outPath}.");
+            return 0;
+        }
+        finally
+        {
+            await session.DisposeAsync();
+        }
+    }
+
     // Candidate keys include names that may not exist on this tier; "?"/silence is itself a finding for M2b.
     private static readonly string[] CandidateKeys =
     [
@@ -166,8 +315,29 @@ internal static class Investigation
         await Task.Delay(300, ct);
     }
 
-    private static Task SetVarAsync(PrinterSession session, string key, string value, CancellationToken ct) =>
-        session.SendRawAsync($"! U1 setvar \"{key}\" \"{value}\"\r\n", ct);
+    /// <summary>
+    /// Sends a setvar, waits ~300 ms, then reads the key back; if the read-back does not match (case-insensitive,
+    /// trimmed) the value being set, retries the whole set+read-back cycle up to 3 times total. Hardware finding
+    /// (M2a Task 1): a setvar immediately followed by a getvar can read back stale on this firmware — see
+    /// docs/hardware/zd220t-m2a-investigation.md Q3, where the Q3 restore silently did not stick.
+    /// </summary>
+    /// <returns>The final read-back value, or null if the key never answered at all.</returns>
+    private static async Task<string?> SetVarVerifiedAsync(PrinterSession session, string key, string value, CancellationToken ct)
+    {
+        string? readBack = null;
+        for (var attempt = 0; attempt < 3; attempt++)
+        {
+            await session.SendRawAsync($"! U1 setvar \"{key}\" \"{value}\"\r\n", ct);
+            await Task.Delay(300, ct);
+            readBack = await session.GetSgdAsync(key, KeyTimeout, ct);
+            if (readBack is not null && string.Equals(readBack.Trim(), value.Trim(), StringComparison.OrdinalIgnoreCase))
+                return readBack;
+        }
+        return readBack;
+    }
+
+    private static bool RestoreConfirmed(string? readBack, string expected) =>
+        readBack is not null && string.Equals(readBack.Trim(), expected.Trim(), StringComparison.OrdinalIgnoreCase);
 
     private static async Task<(UsbPrinterInfo, PrinterSession)> OpenFirstAsync(CancellationToken ct)
     {

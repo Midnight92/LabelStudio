@@ -6,12 +6,48 @@ using LabelStudio.Devices.Discovery;
 using LabelStudio.Devices.Status;
 using LabelStudio.Devices.Transport;
 
-// Usage: LabelStudio.Probe [--out <file.md>] [--test-print] [--investigate-m2a]
+// Usage: LabelStudio.Probe [--out <file.md>] [--test-print] [--investigate-m2a] [--calibrate-only] [--set key=value]...
 // Default --out is per-unit (variant + serial) so re-running against a different printer, or a different
 // unit of the same variant, never silently overwrites another unit's report (or the hand-written M1
 // end-to-end report that predates this convention).
 var outOption = Option(args, "--out");
 var testPrint = args.Contains("--test-print");
+
+var setPairs = new List<(string Key, string Value)>();
+for (var i = 0; i < args.Length; i++)
+{
+    if (args[i] != "--set") continue;
+    if (i + 1 >= args.Length)
+    {
+        Console.Error.WriteLine("--set requires a key=value argument.");
+        return 1;
+    }
+    var raw = args[++i];
+    var eq = raw.IndexOf('=');
+    if (eq <= 0)
+    {
+        Console.Error.WriteLine($"--set value '{raw}' is not in key=value form.");
+        return 1;
+    }
+    setPairs.Add((raw[..eq], raw[(eq + 1)..]));
+}
+if (setPairs.Count > 0)
+{
+    // Applies each pair with the verified setvar helper and exits; no questions, no ~JC, no ^JUS. This is
+    // how the operator puts the printer back to a known state (e.g. ezpl.media_type=gap/notch) after
+    // --investigate-m2a Q3 left it on the last swept candidate (see docs/hardware/zd220t-m2a-investigation.md).
+    using var setCts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+    return await LabelStudio.Probe.Investigation.RunSetAsync(setPairs, setCts.Token);
+}
+
+if (args.Contains("--calibrate-only"))
+{
+    // Generous timeout: includes USB discovery retries, the 40 s poll, and an unbounded operator prompt for
+    // the fed label count, same shape as --investigate-m2a.
+    using var calibrateCts = new CancellationTokenSource(TimeSpan.FromMinutes(15));
+    return await LabelStudio.Probe.Investigation.RunCalibrateOnlyAsync(outOption, calibrateCts.Token);
+}
+
 if (args.Contains("--investigate-m2a"))
 {
     using var investigation = new CancellationTokenSource(TimeSpan.FromMinutes(15));
