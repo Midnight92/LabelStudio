@@ -13,6 +13,8 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <!-- XAML-generated code emits warnings we do not own. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- Custom Program.Main for single-instancing (M1 carry-in; Windows App SDK app-lifecycle docs). -->
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Manifest Include="$(ApplicationManifest)" />

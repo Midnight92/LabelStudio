@@ -11,7 +11,16 @@ internal sealed class ImmediateDispatcher : IUiDispatcher
 internal sealed class RecordingNavigation : INavigationService
 {
     public List<string> Visited { get; } = [];
-    public void NavigateTo(string pageKey) => Visited.Add(pageKey);
+    public List<object?> Parameters { get; } = [];
+    public int BackCount { get; private set; }
+
+    public void NavigateTo(string pageKey, object? parameter = null)
+    {
+        Visited.Add(pageKey);
+        Parameters.Add(parameter);
+    }
+
+    public void GoBack() => BackCount++;
 }
 
 internal sealed class RecordingLogger<T> : ILogger<T>

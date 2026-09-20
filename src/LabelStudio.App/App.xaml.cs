@@ -6,6 +6,7 @@ using LabelStudio.Devices.Simulation;
 using LabelStudio.Devices.Transport;
 using LabelStudio.App.Services;
 using LabelStudio.ViewModels;
+using LabelStudio.ViewModels.Notifications;
 using LabelStudio.ViewModels.Printers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -18,12 +19,29 @@ namespace LabelStudio.App;
 public partial class App : Application
 {
     private MainWindow? _window;
+    private static App? _current;
+    private DispatcherQueue? _uiQueue;
 
     public App()
     {
         InitializeComponent();
+        _current = this;
+        _uiQueue = DispatcherQueue.GetForCurrentThread();
         Services = ConfigureServices(DispatcherQueue.GetForCurrentThread());
         UnhandledException += OnUnhandledException;
+    }
+
+    /// <summary>Called by Program on a background thread when a second launch or a toast click redirects here.</summary>
+    public static void OnRedirectedActivation(Microsoft.Windows.AppLifecycle.AppActivationArguments args)
+    {
+        var app = _current;
+        app?._uiQueue?.TryEnqueue(() =>
+        {
+            app._window?.BringToFront();
+            if (args.Kind == Microsoft.Windows.AppLifecycle.ExtendedActivationKind.AppNotification
+                && args.Data is Microsoft.Windows.AppNotifications.AppNotificationActivatedEventArgs toast)
+                Services.GetRequiredService<AppNotificationService>().Route(toast.Arguments);
+        });
     }
 
     private static void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
@@ -72,6 +90,10 @@ public partial class App : Application
         services.AddSingleton<IUiDispatcher>(new DispatcherQueueUiDispatcher(uiQueue));
         services.AddSingleton<NavigationService>();
         services.AddSingleton<INavigationService>(sp => sp.GetRequiredService<NavigationService>());
+        services.AddSingleton<WindowActivityState>();
+        services.AddSingleton<IAppActivityState>(sp => sp.GetRequiredService<WindowActivityState>());
+        services.AddSingleton<AppNotificationService>();
+        services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<AppNotificationService>());
         services.AddSingleton<ShellViewModel>();
         services.AddTransient<PrintersViewModel>();
         return services.BuildServiceProvider();
@@ -85,9 +107,28 @@ public partial class App : Application
             "Label Studio starting (simulator: {Simulator})",
             Environment.GetEnvironmentVariable("LABELSTUDIO_SIMULATOR") == "1");
 
+        var notifications = Services.GetRequiredService<AppNotificationService>();
+        notifications.LinkInvoked += (_, link) => _uiQueue?.TryEnqueue(() =>
+        {
+            _window?.BringToFront();
+            Services.GetRequiredService<INavigationService>().NavigateTo(PageKeys.Printers, link);
+        });
+        notifications.Initialize();
+
         _window = new MainWindow();
-        _window.Closed += (_, _) => _ = DisposeDevicesAsync();
+        _window.Closed += (_, _) =>
+        {
+            notifications.Unregister();
+            _ = DisposeDevicesAsync();
+        };
         _window.Activate();
+
+        // Cold start from a toast click.
+        var activation = Microsoft.Windows.AppLifecycle.AppInstance.GetCurrent().GetActivatedEventArgs();
+        if (activation.Kind == Microsoft.Windows.AppLifecycle.ExtendedActivationKind.AppNotification
+            && activation.Data is Microsoft.Windows.AppNotifications.AppNotificationActivatedEventArgs toast)
+            notifications.Route(toast.Arguments);
+
         try
         {
             await Services.GetRequiredService<DeviceService>().StartAsync(CancellationToken.None);
