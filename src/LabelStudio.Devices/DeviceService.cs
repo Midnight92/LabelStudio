@@ -1,4 +1,5 @@
 using LabelStudio.Core;
+using LabelStudio.Devices.Calibration;
 using LabelStudio.Devices.Capabilities;
 using LabelStudio.Devices.Commands;
 using LabelStudio.Devices.Discovery;
@@ -24,6 +25,8 @@ public sealed class DeviceService : IAsyncDisposable
     private readonly ISettingsService _settings;
     private readonly TimeProvider _time;
     private readonly ILogger<DeviceService> _log;
+    private readonly CalibrationRunner _calibration;
+    private readonly MediaChangeDetector _mediaChanges;
     private readonly SemaphoreSlim _ops = new(1, 1);
     private readonly CancellationTokenSource _lifetime = new();
     private PrinterSession? _session;
@@ -37,6 +40,8 @@ public sealed class DeviceService : IAsyncDisposable
     {
         (_discovery, _transports, _prober, _profiles, _snapshots, _settings, _time, _log) =
             (discovery, transports, prober, profiles, snapshots, settings, time, log);
+        _calibration = new CalibrationRunner(time);
+        _mediaChanges = new MediaChangeDetector(time);
     }
 
     public DeviceSnapshot Snapshot { get; private set; } = DeviceSnapshot.Initial;
@@ -263,6 +268,7 @@ public sealed class DeviceService : IAsyncDisposable
     private async Task ConnectCoreAsync(UsbPrinterInfo printer, CancellationToken ct, bool announce = true)
     {
         await CloseSessionAsync();
+        _mediaChanges.Reset();
         _target = printer;
         if (announce) Publish(new DeviceSnapshot(ConnectionState.Connecting, printer, null, null, null, DeviceProblem.None));
         var session = new PrinterSession(_transports.Create(printer), _log);
@@ -407,8 +413,44 @@ public sealed class DeviceService : IAsyncDisposable
 
     private void Publish(DeviceSnapshot snapshot)
     {
+        if (_mediaChanges.Observe(snapshot)) snapshot = snapshot with { CalibrationSuggested = true };
         Snapshot = snapshot;
         SnapshotChanged?.Invoke(this, snapshot);
+    }
+
+    /// <summary>
+    /// Runs SmartCal under the exclusive gate, so the poll loop waits instead of counting the printer's
+    /// busy silence as failures. Live ~HS readings are published as they arrive.
+    /// </summary>
+    public Task<CalibrationResult> CalibrateAsync(IProgress<CalibrationProgress>? progress, CancellationToken ct) => RunExclusiveAsync(async () =>
+    {
+        if (_session is null || Snapshot.Profile is null) return CalibrationResult.Failed(CalibrationFailure.NotConnected);
+        var (session, profile) = (_session, Snapshot.Profile);
+        Publish(Snapshot with { Activity = DeviceActivity.Calibrating, CalibrationSuggested = false });
+        try
+        {
+            var live = new InlineProgress<CalibrationProgress>(p =>
+            {
+                if (p.LastStatus is { } s) Publish(Snapshot with { Status = s, State = PrinterStateResolver.Resolve(s) });
+                progress?.Report(p);
+            });
+            var result = await _calibration.RunAsync(session, profile, ModelCatalog.For(profile), live, ct);
+            if (result.Succeeded) PublishSettings(profile, result.Detected);
+            return result;
+        }
+        finally
+        {
+            Publish(Snapshot with { Activity = DeviceActivity.None });
+        }
+    }, ct);
+
+    public Task DismissCalibrationSuggestionAsync(CancellationToken ct) =>
+        RunExclusiveAsync(() => { Publish(Snapshot with { CalibrationSuggested = false }); return Task.CompletedTask; }, ct);
+
+    /// <summary>Reports synchronously on the caller's thread (Progress&lt;T&gt; would post to a sync context).</summary>
+    private sealed class InlineProgress<T>(Action<T> report) : IProgress<T>
+    {
+        public void Report(T value) => report(value);
     }
 
     private async Task RunExclusiveAsync(Func<Task> action, CancellationToken ct)
