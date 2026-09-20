@@ -91,7 +91,7 @@
   <data name="BlinkCode.ZD220.FlashingGreen.Action" xml:space="preserve"><value>Wait for the light to turn solid green before sending another job.</value></data>
   <data name="BlinkCode.ZD220.DoubleFlashingGreen.Pattern" xml:space="preserve"><value>Double-flashing green (two short flashes, one long flash)</value></data>
   <data name="BlinkCode.ZD220.DoubleFlashingGreen.Meaning" xml:space="preserve"><value>The printer is paused.</value></data>
-  <data name="BlinkCode.ZD220.DoubleFlashingGreen.Action" xml:space="preserve"><value>Press FEED, or choose Resume in the app, to continue printing.</value></data>
+  <data name="BlinkCode.ZD220.DoubleFlashingGreen.Action" xml:space="preserve"><value>Choose Resume in the app to continue printing.</value></data>
   <data name="BlinkCode.ZD220.FlashingRed.Pattern" xml:space="preserve"><value>Flashing red</value></data>
   <data name="BlinkCode.ZD220.FlashingRed.Meaning" xml:space="preserve"><value>The printer is open, out of media, unable to sense the loaded media, or detecting a cut error.</value></data>
   <data name="BlinkCode.ZD220.FlashingRed.Action" xml:space="preserve"><value>Close the cover and check that media is loaded and sensed correctly, then choose Retry.</value></data>
