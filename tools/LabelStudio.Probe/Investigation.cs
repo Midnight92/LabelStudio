@@ -60,9 +60,19 @@ internal static class Investigation
                   .AppendLine($"| after power cycle (no ^JUS) | `{afterCycle}` |").AppendLine()
                   .AppendLine($"**SetvarPersistsWithoutSave = {persists}**").AppendLine();
                 var restoredTone = await SetVarVerifiedAsync(session, SgdKeys.Darkness, originalTone, ct);
-                if (!RestoreConfirmed(restoredTone, originalTone))
-                    md.AppendLine($"**WARNING: could not restore `{SgdKeys.Darkness}`; printer left at `{restoredTone}`.**").AppendLine();
-                await session.SendRawAsync("^XA^JUS^XZ", ct);
+                if (RestoreConfirmed(restoredTone, originalTone))
+                {
+                    // Only commit to non-volatile memory once the restore is confirmed — saving an
+                    // unconfirmed value would make the wrong darkness permanent (the bug this task exists
+                    // to prevent).
+                    await session.SendRawAsync("^XA^JUS^XZ", ct);
+                }
+                else
+                {
+                    md.AppendLine($"**WARNING: could not confirm restore of `{SgdKeys.Darkness}` to `{originalTone}` (printer now reads `{restoredTone}`). " +
+                        $"The non-volatile value was NOT touched (`^XA^JUS^XZ` skipped), but the LIVE value may still be wrong. " +
+                        $"Operator: run `tools/LabelStudio.Probe --set {SgdKeys.Darkness}={originalTone}` to fix it.**").AppendLine();
+                }
             }
 
             // Q2 — are ZPL setting commands reflected in SGD? (each change is restored with the same mechanism)
@@ -157,11 +167,22 @@ internal static class Investigation
     /// </summary>
     public static async Task<int> RunSetAsync(IReadOnlyList<(string Key, string Value)> pairs, CancellationToken ct)
     {
-        foreach (var (key, _) in pairs)
+        // Validate every pair up front, before opening a session, so a typo in the Nth pair never leaves the
+        // first N-1 applied with no chance to report the rest.
+        foreach (var (key, value) in pairs)
         {
             if (!ValidSgdKey.IsMatch(key))
             {
                 Console.Error.WriteLine($"Invalid --set key '{key}': SGD keys must be lowercase letters, digits, dots and underscores only.");
+                return 1;
+            }
+            try
+            {
+                ValidateSetvarValue(value);
+            }
+            catch (ArgumentException ex)
+            {
+                Console.Error.WriteLine($"Invalid --set value for '{key}={value}': {ex.Message}");
                 return 1;
             }
         }
@@ -193,8 +214,16 @@ internal static class Investigation
         var (printer, session) = await OpenFirstAsync(ct);
         try
         {
-            var status = await session.GetHostStatusAsync(ct);
-            var state = PrinterStateResolver.Resolve(status);
+            PrinterState state;
+            try
+            {
+                state = PrinterStateResolver.Resolve(await session.GetHostStatusAsync(ct));
+            }
+            catch (Exception ex) when (ex is TimeoutException or PrinterProtocolException)
+            {
+                Console.Error.WriteLine($"Printer is not Ready (no answer to ~HS: {ex.GetType().Name}); calibration not started (media not wasted).");
+                return 1;
+            }
             if (state != PrinterState.Ready)
             {
                 Console.Error.WriteLine($"Printer is not Ready (state: {state}); calibration not started (media not wasted).");
@@ -322,9 +351,17 @@ internal static class Investigation
     /// docs/hardware/zd220t-m2a-investigation.md Q3, where the Q3 restore silently did not stick.
     /// </summary>
     /// <returns>The final read-back value, or null if the key never answered at all.</returns>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="value"/> is not printable ASCII or contains a double quote, which would break out of
+    /// the quoted setvar argument (`! U1 setvar "key" "value"`) and could send unintended commands to the
+    /// printer. Validated here so every call site — including the fixed literals inside this file — is
+    /// covered, not just <see cref="RunSetAsync"/>'s operator-supplied values.
+    /// </exception>
     private static async Task<string?> SetVarVerifiedAsync(PrinterSession session, string key, string value, CancellationToken ct)
     {
+        ValidateSetvarValue(value);
         string? readBack = null;
+        // 3 total set+read-back attempts (not an initial attempt plus 3 retries).
         for (var attempt = 0; attempt < 3; attempt++)
         {
             await session.SendRawAsync($"! U1 setvar \"{key}\" \"{value}\"\r\n", ct);
@@ -338,6 +375,15 @@ internal static class Investigation
 
     private static bool RestoreConfirmed(string? readBack, string expected) =>
         readBack is not null && string.Equals(readBack.Trim(), expected.Trim(), StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Rejects values that would break out of the quoted setvar argument or contain unsendable bytes.</summary>
+    private static void ValidateSetvarValue(string value)
+    {
+        if (value.Contains('"'))
+            throw new ArgumentException($"value '{value}' contains a double quote, which would break out of the quoted setvar argument.");
+        if (value.Any(c => c < 0x20 || c > 0x7E))
+            throw new ArgumentException($"value '{value}' contains a non-printable-ASCII character.");
+    }
 
     private static async Task<(UsbPrinterInfo, PrinterSession)> OpenFirstAsync(CancellationToken ct)
     {
