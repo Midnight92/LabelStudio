@@ -90,7 +90,9 @@ public class SimulatedPrinterTests
         Assert.False(midway.PaperOut); // still searching: the failure takes far longer than a good run
         Assert.Equal("1218", await session.GetSgdAsync("zpl.label_length", Short, CancellationToken.None));
 
-        time.Advance(printer.FailureDuration);
+        // Measured on hardware: media out ~20 s after ~JC. Advancing to a fixed 20 s (not to
+        // CalibrationDuration + FailureDuration) is what pins the simulator to the real timing.
+        time.Advance(TimeSpan.FromSeconds(20) - printer.CalibrationDuration);
         Assert.True((await session.GetHostStatusAsync(CancellationToken.None)).PaperOut);
         Assert.Equal(18, printer.LabelsFed);
     }

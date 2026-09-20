@@ -67,9 +67,9 @@ public sealed partial class SimulatedPrinter
     /// <summary>Every write in arrival order — lets tests assert ordering (e.g. snapshot before setvar).</summary>
     public List<string> ReceivedCommands { get; } = [];
 
-    /// <summary>Measured: a good calibration rewrites zpl.label_length at ~2.2 s.</summary>
+    /// <summary>Measured: a good calibration rewrites zpl.label_length about 2.2-2.5 s in.</summary>
     public TimeSpan CalibrationDuration { get; set; } = TimeSpan.FromSeconds(2.5);
-    /// <summary>Measured: a calibration that cannot sense the media runs ~20 s before reporting media out.</summary>
+    /// <summary>Measured: a calibration that cannot sense the media reports media out ~20 s after ~JC (total, not additional).</summary>
     public TimeSpan FailureDuration { get; set; } = TimeSpan.FromSeconds(20);
     public SimulatedCalibrationOutcome CalibrationOutcome { get; set; } = new(FindsGap: true, LengthDots: 1218);
     public int CalibrationFedLabels { get; set; } = 2;
@@ -123,8 +123,8 @@ public sealed partial class SimulatedPrinter
     private void StartCalibration()
     {
         CalibrationRuns++;
-        // A calibration that cannot sense the media keeps feeding for much longer before it gives up.
-        _calibratingUntil = Clock.GetUtcNow() + (CalibrationOutcome.FindsGap ? CalibrationDuration : CalibrationDuration + FailureDuration);
+        // Both durations are measured from ~JC, so the failure time is FailureDuration itself, not a sum.
+        _calibratingUntil = Clock.GetUtcNow() + (CalibrationOutcome.FindsGap ? CalibrationDuration : FailureDuration);
     }
 
     private void CompleteCalibrationIfDue()
