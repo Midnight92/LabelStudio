@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using LabelStudio.Core;
 using LabelStudio.Devices.Capabilities;
+using LabelStudio.Devices.Settings;
 using LabelStudio.Devices.Simulation;
 using LabelStudio.Devices.Status;
 using LabelStudio.Tests;
@@ -241,7 +242,8 @@ public class DeviceServiceTests
         var settings = new SettingsService(new JsonFileStore<AppSettings>(dir.File("settings.json")));
         var svc = new DeviceService(
             discovery, new SimulatedTransportFactory(discovery), new CapabilityProber(TimeSpan.FromMilliseconds(50)),
-            new ProfileCache(badProfilesPath), settings, new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
+            new ProfileCache(badProfilesPath), new ConfigurationSnapshotStore(dir.File("backups")), settings,
+            new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
         await using var _ = svc;
 
         await svc.StartAsync(None);
@@ -261,7 +263,8 @@ public class DeviceServiceTests
         var settings = new SettingsService(new JsonFileStore<AppSettings>(settingsPath));
         var svc = new DeviceService(
             discovery, new SimulatedTransportFactory(discovery), new CapabilityProber(TimeSpan.FromMilliseconds(50)),
-            new ProfileCache(dir.File("profiles")), settings, new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
+            new ProfileCache(dir.File("profiles")), new ConfigurationSnapshotStore(dir.File("backups")), settings,
+            new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
         await using var _ = svc;
 
         await svc.StartAsync(None);

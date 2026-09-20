@@ -23,6 +23,11 @@ internal static class CommandGuard
         {
             // Expected during app/service shutdown — not a user-facing failure, so swallow silently.
         }
+        catch (ConfigurationBackupException ex)
+        {
+            log.LogError(ex, "Configuration backup failed; the change was not sent");
+            setError(Strings.Get("Settings.BackupFailed"));
+        }
         catch (Exception ex) when (ex is TimeoutException or IOException or UnauthorizedAccessException or InvalidOperationException
             or ObjectDisposedException or PrinterUnavailableException or PrinterProtocolException)
         {

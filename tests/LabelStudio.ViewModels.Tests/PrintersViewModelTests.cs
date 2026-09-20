@@ -3,6 +3,7 @@ using LabelStudio.Core;
 using LabelStudio.Devices;
 using LabelStudio.Devices.Capabilities;
 using LabelStudio.Devices.Discovery;
+using LabelStudio.Devices.Settings;
 using LabelStudio.Devices.Simulation;
 using LabelStudio.Devices.Transport;
 using LabelStudio.Tests;
@@ -179,7 +180,8 @@ public class PrintersViewModelTests
         var settings = new SettingsService(new JsonFileStore<AppSettings>(dir.File("settings.json")));
         var svc = new DeviceService(
             discovery, new WriteThrowsTransportFactory(printer, "~PH"), new CapabilityProber(TimeSpan.FromMilliseconds(50)),
-            new ProfileCache(dir.File("profiles")), settings, new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
+            new ProfileCache(dir.File("profiles")), new ConfigurationSnapshotStore(dir.File("backups")), settings,
+            new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
         await using var _ = svc;
         using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), NullLogger<PrintersViewModel>.Instance);
         await svc.StartAsync(CancellationToken.None);
@@ -215,7 +217,8 @@ public class PrintersViewModelTests
         var discovery = new SimulatedDiscovery(printer);
         var settings = new SettingsService(new JsonFileStore<AppSettings>(dir.File("settings.json")));
         await using var svc = new DeviceService(discovery, new WriteThrowsTransportFactory(printer, "~PH"),
-            new CapabilityProber(TimeSpan.FromMilliseconds(50)), new ProfileCache(dir.File("profiles")), settings,
+            new CapabilityProber(TimeSpan.FromMilliseconds(50)), new ProfileCache(dir.File("profiles")),
+            new ConfigurationSnapshotStore(dir.File("backups")), settings,
             new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
         var log = new RecordingLogger<PrintersViewModel>();
         using var vm = new PrintersViewModel(svc, new ImmediateDispatcher(), log);

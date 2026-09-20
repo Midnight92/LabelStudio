@@ -2,6 +2,7 @@ using LabelStudio.Core;
 using LabelStudio.Devices;
 using LabelStudio.Devices.Capabilities;
 using LabelStudio.Devices.Discovery;
+using LabelStudio.Devices.Settings;
 using LabelStudio.Devices.Simulation;
 using LabelStudio.Devices.Transport;
 using LabelStudio.App.Services;
@@ -71,6 +72,7 @@ public partial class App : Application
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<ISettingsService>(_ => new SettingsService(new JsonFileStore<AppSettings>(AppDataPaths.SettingsFile)));
         services.AddSingleton<IProfileCache>(_ => new ProfileCache(AppDataPaths.ProfilesDirectory));
+        services.AddSingleton<IConfigurationSnapshotStore>(_ => new ConfigurationSnapshotStore(AppDataPaths.ConfigBackupsDirectory));
         services.AddSingleton(new CapabilityProber());
 
         // LABELSTUDIO_SIMULATOR=1 runs against an in-memory ZD220t (no hardware needed).

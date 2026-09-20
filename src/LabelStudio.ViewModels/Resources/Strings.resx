@@ -77,4 +77,5 @@
   <data name="Printers.Hint.Paused" xml:space="preserve"><value>Resume the printer to print a test label.</value></data>
   <data name="Sgd.Responded" xml:space="preserve"><value>Responded</value></data>
   <data name="Sgd.NoResponse" xml:space="preserve"><value>No response</value></data>
+  <data name="Settings.BackupFailed" xml:space="preserve"><value>Couldn't save a backup of the printer's settings, so nothing was changed. Check that there is free disk space, then try again.</value></data>
 </root>

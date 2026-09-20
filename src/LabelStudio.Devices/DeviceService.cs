@@ -2,6 +2,8 @@ using LabelStudio.Core;
 using LabelStudio.Devices.Capabilities;
 using LabelStudio.Devices.Commands;
 using LabelStudio.Devices.Discovery;
+using LabelStudio.Devices.Models;
+using LabelStudio.Devices.Settings;
 using LabelStudio.Devices.Status;
 using LabelStudio.Devices.Transport;
 using Microsoft.Extensions.Logging;
@@ -18,6 +20,7 @@ public sealed class DeviceService : IAsyncDisposable
     private readonly ITransportFactory _transports;
     private readonly CapabilityProber _prober;
     private readonly IProfileCache _profiles;
+    private readonly IConfigurationSnapshotStore _snapshots;
     private readonly ISettingsService _settings;
     private readonly TimeProvider _time;
     private readonly ILogger<DeviceService> _log;
@@ -30,9 +33,10 @@ public sealed class DeviceService : IAsyncDisposable
     private volatile bool _disposed;
 
     public DeviceService(IPrinterDiscovery discovery, ITransportFactory transports, CapabilityProber prober, IProfileCache profiles,
-        ISettingsService settings, TimeProvider time, ILogger<DeviceService> log)
+        IConfigurationSnapshotStore snapshots, ISettingsService settings, TimeProvider time, ILogger<DeviceService> log)
     {
-        (_discovery, _transports, _prober, _profiles, _settings, _time, _log) = (discovery, transports, prober, profiles, settings, time, log);
+        (_discovery, _transports, _prober, _profiles, _snapshots, _settings, _time, _log) =
+            (discovery, transports, prober, profiles, snapshots, settings, time, log);
     }
 
     public DeviceSnapshot Snapshot { get; private set; } = DeviceSnapshot.Initial;
@@ -80,8 +84,113 @@ public sealed class DeviceService : IAsyncDisposable
         SendCoreAsync(TestLabel.Build(Snapshot.Profile ?? throw new InvalidOperationException("No printer connected."), _time.GetLocalNow()), ct), ct);
 
     public Task FeedAsync(CancellationToken ct) => SendRawAsync(ZplCommands.Feed, ct);
-    public Task PauseAsync(CancellationToken ct) => SendThenPollAsync(ZplCommands.Pause, ct);
+
+    public Task PauseAsync(CancellationToken ct)
+    {
+        LastAppPauseAt = _time.GetUtcNow();
+        return SendThenPollAsync(ZplCommands.Pause, ct);
+    }
+
     public Task ResumeAsync(CancellationToken ct) => SendThenPollAsync(ZplCommands.Resume, ct);
+
+    public ModelTraits Traits => ModelCatalog.For(Snapshot.Profile);
+
+    /// <summary>When the app last sent ~PP itself — the notifier must not toast a pause the user just asked for.</summary>
+    public DateTimeOffset? LastAppPauseAt { get; private set; }
+
+    /// <summary>
+    /// Writes media settings: validate everything, snapshot the current configuration, write, read each key back.
+    /// Nothing is sent if validation or the snapshot fails. Accepted keys stay pending until <see cref="CommitAsync"/>.
+    /// </summary>
+    public Task<ApplyResult> ApplySettingsAsync(IReadOnlyDictionary<string, string> changes, CancellationToken ct) => RunExclusiveAsync(async () =>
+    {
+        var (session, profile) = RequireConnected();
+        var traits = ModelCatalog.For(profile);
+        var writes = changes.Select(c =>
+        {
+            if (!profile.Supports(c.Key)) throw new ArgumentException($"The printer did not answer '{c.Key}' when probed.", nameof(changes));
+            return (c.Key, Value: MediaSettingWriter.Normalise(c.Key, c.Value, traits));
+        }).ToList();
+
+        await SaveSnapshotAsync(session, profile, "before-apply", ct);
+        foreach (var (key, value) in writes)
+        {
+            if (traits.WritableKeys[key] == WriteStrategy.Sgd) await session.SetSgdAsync(key, value, ct);
+            else await session.SendRawAsync(MediaSettingWriter.ToZpl(key, value), ct);
+        }
+
+        var readBack = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach (var (key, _) in writes) readBack[key] = await session.GetSgdAsync(key, SgdKeys.ProbeTimeout, ct);
+        var rejected = writes.Where(w => !MediaSettingWriter.Matches(w.Value, readBack[w.Key])).Select(w => w.Key).ToList();
+        var settings = new Dictionary<string, string>(profile.Settings, StringComparer.Ordinal);
+        foreach (var (key, value) in readBack) if (value is not null) settings[key] = value;
+        var pending = new HashSet<string>(Snapshot.PendingCommitKeys, StringComparer.Ordinal);
+        pending.UnionWith(writes.Select(w => w.Key).Except(rejected));
+        Publish(Snapshot with { Profile = profile with { Settings = settings }, PendingCommitKeys = pending });
+        return new ApplyResult(readBack, rejected);
+    }, ct);
+
+    /// <summary>Saves the current settings to non-volatile memory with ^JU S, after a snapshot.</summary>
+    public Task CommitAsync(CancellationToken ct) => RunExclusiveAsync(async () =>
+    {
+        var (session, profile) = RequireConnected();
+        await SaveSnapshotAsync(session, profile, "before-commit", ct);
+        await session.SendRawAsync(ZplCommands.SaveSettings, ct);
+        Publish(Snapshot with { PendingCommitKeys = new HashSet<string>() });
+    }, ct);
+
+    /// <summary>Re-reads keys the printer already answered (counters, calibration results) into the profile.</summary>
+    public Task<IReadOnlyDictionary<string, string>> ReadSettingsAsync(IEnumerable<string> keys, CancellationToken ct) => RunExclusiveAsync(async () =>
+    {
+        var (session, profile) = RequireConnected();
+        var values = await ReadSupportedAsync(session, profile, keys, ct);
+        PublishSettings(profile, values);
+        return (IReadOnlyDictionary<string, string>)values;
+    }, ct);
+
+    private static async Task<Dictionary<string, string>> ReadSupportedAsync(PrinterSession session, CapabilityProfile profile, IEnumerable<string> keys, CancellationToken ct)
+    {
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var key in keys.Where(profile.Supports).ToList())
+            if (await session.GetSgdAsync(key, SgdKeys.ProbeTimeout, ct) is { } v) values[key] = v;
+        return values;
+    }
+
+    private void PublishSettings(CapabilityProfile profile, IReadOnlyDictionary<string, string> values)
+    {
+        var settings = new Dictionary<string, string>(profile.Settings, StringComparer.Ordinal);
+        foreach (var (k, v) in values) settings[k] = v;
+        Publish(Snapshot with { Profile = profile with { Settings = settings } });
+    }
+
+    private async Task SaveSnapshotAsync(PrinterSession session, CapabilityProfile profile, string reason, CancellationToken ct)
+    {
+        var values = await ReadSupportedAsync(session, profile, profile.Settings.Keys, ct);
+        try
+        {
+            var path = _snapshots.Save(new ConfigurationSnapshot(profile.Serial, profile.Model, profile.Firmware, _time.GetUtcNow(), reason, values));
+            _log.LogInformation("Configuration snapshot ({Reason}) written to {Path}", reason, path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new ConfigurationBackupException("Couldn't save a configuration backup, so no settings were changed.", ex);
+        }
+    }
+
+    private (PrinterSession Session, CapabilityProfile Profile) RequireConnected() =>
+        (_session ?? throw new InvalidOperationException("No printer connected."),
+         Snapshot.Profile ?? throw new InvalidOperationException("No printer connected."));
+
+    private async Task<T> RunExclusiveAsync<T>(Func<Task<T>> action, CancellationToken ct)
+    {
+        T result = default!;
+        // Explicitly typed so overload resolution can't match the generic overload against itself
+        // (an inferred `async () => result = await action()` is ambiguous between Func<Task> and
+        // Func<Task<T>> and previously resolved to this same generic overload, recursing forever).
+        Func<Task> body = async () => result = await action();
+        await RunExclusiveAsync(body, ct);
+        return result;
+    }
 
     private Task SendThenPollAsync(string command, CancellationToken ct) => RunExclusiveAsync(async () =>
     {
@@ -323,3 +432,6 @@ public sealed class DeviceService : IAsyncDisposable
         _lifetime.Dispose();
     }
 }
+
+/// <param name="Rejected">Keys whose read-back did not match what was written (printer refused or clamped it).</param>
+public sealed record ApplyResult(IReadOnlyDictionary<string, string?> ReadBack, IReadOnlyList<string> Rejected);
