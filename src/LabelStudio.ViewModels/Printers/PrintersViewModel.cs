@@ -6,6 +6,7 @@ using LabelStudio.Devices.Capabilities;
 using LabelStudio.Devices.Status;
 using LabelStudio.ViewModels.Formatting;
 using LabelStudio.ViewModels.Status;
+using Microsoft.Extensions.Logging;
 
 namespace LabelStudio.ViewModels.Printers;
 
@@ -28,13 +29,15 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
 
     private readonly DeviceService _devices;
     private readonly IUiDispatcher _ui;
+    private readonly ILogger<PrintersViewModel> _log;
     private CapabilityProfile? _shownProfile;
     private string? _shownCurrentSerial;
 
-    public PrintersViewModel(DeviceService devices, IUiDispatcher ui)
+    public PrintersViewModel(DeviceService devices, IUiDispatcher ui, ILogger<PrintersViewModel> log)
     {
         _devices = devices;
         _ui = ui;
+        _log = log;
         Status = StatusPresenter.Present(devices.Snapshot, devices.Printers.Count);
         Heading = Strings.Get("Printers.NoSelection");
         PauseLabel = Strings.Get("Printers.Pause");
@@ -99,7 +102,7 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
         _ => Task.CompletedTask,
     };
 
-    private Task RunAsync(Func<CancellationToken, Task> action) => CommandGuard.RunAsync(action, e => CommandError = e);
+    private Task RunAsync(Func<CancellationToken, Task> action) => CommandGuard.RunAsync(action, e => CommandError = e, _log);
 
     private void OnSnapshotChanged(object? sender, DeviceSnapshot s) => _ui.Post(() => Apply(s));
     private void OnPrintersChanged(object? sender, EventArgs e) => _ui.Post(ApplyPrinters);

@@ -5,9 +5,14 @@ public sealed class CapabilityProber(TimeSpan? keyTimeout = null)
 {
     private readonly TimeSpan _keyTimeout = keyTimeout ?? SgdKeys.ProbeTimeout;
 
-    public async Task<CapabilityProfile> ProbeAsync(PrinterSession session, string usbSerial, IReadOnlySet<string> skipKeys, CancellationToken ct)
+    public Task<CapabilityProfile> ProbeAsync(PrinterSession session, string usbSerial, IReadOnlySet<string> skipKeys, CancellationToken ct) =>
+        ProbeAsync(session, usbSerial, _ => skipKeys, ct);
+
+    /// <param name="skipKeysForFirmware">Called with the ~HI firmware version, so cached skip lists are firmware-specific.</param>
+    public async Task<CapabilityProfile> ProbeAsync(PrinterSession session, string usbSerial, Func<string, IReadOnlySet<string>> skipKeysForFirmware, CancellationToken ct)
     {
         var identification = await session.GetHostIdentificationAsync(ct);
+        var skipKeys = skipKeysForFirmware(identification.Firmware);
         var settings = new Dictionary<string, string>(StringComparer.Ordinal);
         var unresponsive = new List<string>();
         foreach (var key in SgdKeys.ProbeList)

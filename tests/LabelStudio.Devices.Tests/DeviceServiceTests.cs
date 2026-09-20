@@ -287,4 +287,25 @@ public class DeviceServiceTests
             $"Expected the second connect to re-query every key instead of trusting a cached all-unresponsive result " +
             $"(first attempt count: {firstAttempts}, second: {printer.GetVarRequests.Count}).");
     }
+
+    [Fact]
+    public async Task Firmware_change_reprobes_previously_unresponsive_keys()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        printer.SilentKeys.Add(SgdKeys.PowerUpAction);
+        var (svc, _, _) = TestDevices.Create(dir, printer);
+        await using var _ = svc;
+        await svc.StartAsync(None);
+        Assert.False(svc.Snapshot.Profile!.Supports(SgdKeys.PowerUpAction));
+
+        printer.SilentKeys.Clear();
+        printer.Sgd[SgdKeys.PowerUpAction] = "no motion";
+        await svc.ReconnectAsync(None);
+        Assert.False(svc.Snapshot.Profile!.Supports(SgdKeys.PowerUpAction)); // same firmware: the cached skip holds
+
+        printer.Firmware = "V99.00.00Z";
+        await svc.ReconnectAsync(None);
+        Assert.True(svc.Snapshot.Profile!.Supports(SgdKeys.PowerUpAction));
+    }
 }

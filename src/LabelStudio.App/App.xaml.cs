@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
+using Serilog;
 
 namespace LabelStudio.App;
 
@@ -41,7 +42,14 @@ public partial class App : Application
     private static ServiceProvider ConfigureServices(DispatcherQueue uiQueue)
     {
         var services = new ServiceCollection();
-        services.AddLogging(b => b.AddDebug().SetMinimumLevel(LogLevel.Debug));
+        // Persisted log (M1 carry-in): %LOCALAPPDATA%\LabelStudio\logs\labelstudio-YYYYMMDD.log, one file per day, 7 kept.
+        // Information and above only — the Debug provider still gets the chatty poll/probe messages.
+        var fileLog = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .WriteTo.File(Path.Combine(AppDataPaths.LogsDirectory, "labelstudio-.log"),
+                rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7)
+            .CreateLogger();
+        services.AddLogging(b => b.AddDebug().AddSerilog(fileLog, dispose: true).SetMinimumLevel(LogLevel.Debug));
         services.AddSingleton(TimeProvider.System);
         services.AddSingleton<ISettingsService>(_ => new SettingsService(new JsonFileStore<AppSettings>(AppDataPaths.SettingsFile)));
         services.AddSingleton<IProfileCache>(_ => new ProfileCache(AppDataPaths.ProfilesDirectory));
@@ -72,7 +80,7 @@ public partial class App : Application
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         _window = new MainWindow();
-        _window.Closed += (_, _) => _ = Services.GetRequiredService<DeviceService>().DisposeAsync().AsTask();
+        _window.Closed += (_, _) => _ = DisposeDevicesAsync();
         _window.Activate();
         try
         {
@@ -81,6 +89,18 @@ public partial class App : Application
         catch (Exception ex)
         {
             Services.GetRequiredService<ILogger<App>>().LogError(ex, "Device service failed to start");
+        }
+    }
+
+    private static async Task DisposeDevicesAsync()
+    {
+        try
+        {
+            await Services.GetRequiredService<DeviceService>().DisposeAsync();
+        }
+        catch (Exception ex)
+        {
+            Services.GetRequiredService<ILogger<App>>().LogError(ex, "Closing the printer connection on exit failed");
         }
     }
 }

@@ -2,6 +2,7 @@ using LabelStudio.Devices;
 using LabelStudio.Devices.Simulation;
 using LabelStudio.Tests;
 using LabelStudio.ViewModels.Status;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace LabelStudio.ViewModels.Tests;
 
@@ -14,7 +15,7 @@ public class ShellViewModelTests
         var (svc, _, _) = TestDevices.Create(dir, new SimulatedPrinter());
         await using var _ = svc;
         var nav = new RecordingNavigation();
-        var shell = new ShellViewModel(svc, new ImmediateDispatcher(), nav);
+        var shell = new ShellViewModel(svc, new ImmediateDispatcher(), nav, NullLogger<ShellViewModel>.Instance);
         await svc.StartAsync(CancellationToken.None);
         Assert.Equal(StatusTone.Success, shell.Status.Tone);
         await shell.PillActionCommand.ExecuteAsync(null);
@@ -28,7 +29,7 @@ public class ShellViewModelTests
         var printer = new SimulatedPrinter { Claimed = true };
         var (svc, _, _) = TestDevices.Create(dir, printer);
         await using var _ = svc;
-        var shell = new ShellViewModel(svc, new ImmediateDispatcher(), new RecordingNavigation());
+        var shell = new ShellViewModel(svc, new ImmediateDispatcher(), new RecordingNavigation(), NullLogger<ShellViewModel>.Instance);
         await svc.StartAsync(CancellationToken.None);
         Assert.Equal(StatusAction.Reconnect, shell.Status.Action);
         printer.Claimed = false;
@@ -41,7 +42,7 @@ public class ShellViewModelTests
     {
         using var dir = new TempDir();
         var (svc, _, _) = TestDevices.Create(dir, new SimulatedPrinter());
-        var shell = new ShellViewModel(svc, new ImmediateDispatcher(), new RecordingNavigation());
+        var shell = new ShellViewModel(svc, new ImmediateDispatcher(), new RecordingNavigation(), NullLogger<ShellViewModel>.Instance);
         await svc.StartAsync(CancellationToken.None);
         await svc.DisposeAsync(); // RefreshCommand will now hit ObjectDisposedException inside DeviceService
 

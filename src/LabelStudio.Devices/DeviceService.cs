@@ -92,11 +92,11 @@ public sealed class DeviceService : IAsyncDisposable
     private Task SendCoreAsync(string commands, CancellationToken ct) =>
         (_session ?? throw new InvalidOperationException("No printer connected.")).SendRawAsync(commands, ct);
 
-    private IReadOnlySet<string> GetUnresponsiveKeysBestEffort(string serial)
+    private IReadOnlySet<string> GetUnresponsiveKeysBestEffort(string serial, string firmware)
     {
         try
         {
-            return _profiles.GetUnresponsiveKeys(serial);
+            return _profiles.GetUnresponsiveKeys(serial, firmware);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -105,11 +105,11 @@ public sealed class DeviceService : IAsyncDisposable
         }
     }
 
-    private void SaveUnresponsiveKeysBestEffort(string serial, IEnumerable<string> keys)
+    private void SaveUnresponsiveKeysBestEffort(string serial, string firmware, IEnumerable<string> keys)
     {
         try
         {
-            _profiles.SaveUnresponsiveKeys(serial, keys);
+            _profiles.SaveUnresponsiveKeys(serial, firmware, keys);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -150,13 +150,13 @@ public sealed class DeviceService : IAsyncDisposable
         try
         {
             await session.OpenAsync(ct);
-            var profile = await _prober.ProbeAsync(session, printer.Serial, GetUnresponsiveKeysBestEffort(printer.Serial), ct);
+            var profile = await _prober.ProbeAsync(session, printer.Serial, firmware => GetUnresponsiveKeysBestEffort(printer.Serial, firmware), ct);
             // A cache/settings write must never decide connectivity: a directory that can't be created or a
             // locked file only costs us the next reconnect's skip-list optimisation, not this connection.
             // Also: never persist an all-unresponsive probe (profile.Settings.Count == 0) — that almost
             // certainly means the probe itself failed to talk to the printer, not that every key is genuinely
             // unsupported, and caching it would wrongly skip every key forever.
-            if (profile.Settings.Count > 0) SaveUnresponsiveKeysBestEffort(printer.Serial, profile.UnresponsiveKeys);
+            if (profile.Settings.Count > 0) SaveUnresponsiveKeysBestEffort(printer.Serial, profile.Firmware, profile.UnresponsiveKeys);
             var status = await session.GetHostStatusAsync(ct);
             if (_disposed) return; // about to be (or already being) torn down: let the finally below dispose it, don't publish or adopt it.
             _session = session;
