@@ -95,6 +95,73 @@ public class FaultNotifierTests
     [Fact]
     public async Task Faults_during_calibration_do_not_toast()
     {
+        // Narrowed (fix round 1): this only asserts nothing is raised WHILE Activity == Calibrating.
+        // A fault still present after calibration ends is correctly announced under the new rule — asserting
+        // "no toast ever" here would re-encode the swallowed-occurrence bug the fix closes.
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter { CalibrationOutcome = new(FindsGap: false, LengthDots: 0) };
+        var (svc, _, _, time) = TestDevices.CreateTimed(dir, printer);
+        await using var _ = svc;
+        var shown = new RecordingNotifications();
+        var seenDuringCalibration = new List<int>();
+        svc.SnapshotChanged += (_, snap) =>
+        {
+            if (snap.Activity == Devices.DeviceActivity.Calibrating) seenDuringCalibration.Add(shown.Shown.Count);
+        };
+        using var notifier = new FaultNotifier(svc, shown, new Activity(), time);
+        await svc.StartAsync(CancellationToken.None);
+        await TestDevices.DriveAsync(svc.CalibrateAsync(null, CancellationToken.None), time);
+        Assert.NotEmpty(seenDuringCalibration);
+        Assert.All(seenDuringCalibration, count => Assert.Equal(0, count));
+    }
+
+    [Fact]
+    public async Task A_fault_that_started_in_the_foreground_is_announced_once_the_window_backgrounds()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        var (svc, _, _, time) = TestDevices.CreateTimed(dir, printer);
+        await using var _ = svc;
+        var shown = new RecordingNotifications();
+        var activity = new Activity { IsForeground = true };
+        using var notifier = new FaultNotifier(svc, shown, activity, time);
+        await svc.StartAsync(CancellationToken.None);
+
+        printer.PaperOut = true;
+        await svc.RefreshAsync(CancellationToken.None);
+        Assert.Empty(shown.Shown);
+
+        activity.IsForeground = false;
+        await svc.RefreshAsync(CancellationToken.None);
+        Assert.Single(shown.Shown);
+    }
+
+    [Fact]
+    public async Task Still_no_repeats_once_the_backgrounded_fault_has_been_announced()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        var (svc, _, _, time) = TestDevices.CreateTimed(dir, printer);
+        await using var _ = svc;
+        var shown = new RecordingNotifications();
+        var activity = new Activity { IsForeground = true };
+        using var notifier = new FaultNotifier(svc, shown, activity, time);
+        await svc.StartAsync(CancellationToken.None);
+
+        printer.PaperOut = true;
+        await svc.RefreshAsync(CancellationToken.None);
+        activity.IsForeground = false;
+        await svc.RefreshAsync(CancellationToken.None);
+        Assert.Single(shown.Shown);
+
+        await svc.RefreshAsync(CancellationToken.None);
+        await svc.RefreshAsync(CancellationToken.None);
+        Assert.Single(shown.Shown);
+    }
+
+    [Fact]
+    public async Task A_fault_left_behind_by_calibration_is_announced_after_it_ends()
+    {
         using var dir = new TempDir();
         var printer = new SimulatedPrinter { CalibrationOutcome = new(FindsGap: false, LengthDots: 0) };
         var (svc, _, _, time) = TestDevices.CreateTimed(dir, printer);
@@ -102,7 +169,11 @@ public class FaultNotifierTests
         var shown = new RecordingNotifications();
         using var notifier = new FaultNotifier(svc, shown, new Activity(), time);
         await svc.StartAsync(CancellationToken.None);
+
         await TestDevices.DriveAsync(svc.CalibrateAsync(null, CancellationToken.None), time);
-        Assert.Empty(shown.Shown);
+        await svc.RefreshAsync(CancellationToken.None);
+
+        var toast = Assert.Single(shown.Shown);
+        Assert.Equal("Media out", toast.Title);
     }
 }
