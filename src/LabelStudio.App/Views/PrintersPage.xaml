@@ -9,7 +9,7 @@
     <DataTemplate x:Key="KeyValueTemplate" x:DataType="vm:KeyValueRow">
       <Grid ColumnSpacing="12" Padding="0,4">
         <Grid.ColumnDefinitions><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-        <TextBlock Text="{x:Bind Label}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        <TextBlock Text="{x:Bind Label}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
         <TextBlock Grid.Column="1" Text="{x:Bind Value}" Style="{StaticResource NumericValueTextStyle}" />
       </Grid>
     </DataTemplate>
