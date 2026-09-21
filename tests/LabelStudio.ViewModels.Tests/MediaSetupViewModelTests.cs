@@ -109,11 +109,12 @@ public class MediaSetupViewModelTests
     public async Task Rejected_value_is_reported()
     {
         using var dir = new TempDir();
-        var (vm, _, _, svc) = await CreateAsync(dir, p => p.ReadOnlyKeys.Add("print.tone"));
+        var (vm, _, time, svc) = await CreateAsync(dir, p => p.ReadOnlyKeys.Add("print.tone"));
         await using var _ = svc;
         using var __ = vm;
         vm.Darkness = 16;
-        await vm.ApplyPendingAsync();
+        // A key the firmware ignores is retried after a settle before it is called refused, so the clock has to move.
+        await TestDevices.DriveAsync(vm.ApplyPendingAsync(), time);
         Assert.NotNull(vm.CommandError);
         Assert.Equal(20.0, vm.Darkness);
     }

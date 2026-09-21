@@ -125,11 +125,14 @@ public class DeviceServiceSettingsTests
         using var dir = new TempDir();
         var printer = new SimulatedPrinter();
         printer.ReadOnlyKeys.Add(SgdKeys.Darkness);
-        var (svc, _, _, _) = TestDevices.CreateTimed(dir, printer);
+        var (svc, _, _, time) = TestDevices.CreateTimed(dir, printer);
         await using var _ = svc;
         await svc.StartAsync(None);
-        var result = await svc.ApplySettingsAsync(new Dictionary<string, string> { [SgdKeys.Darkness] = "16" }, None);
+        // A key the firmware never accepts is retried, then reported as refused rather than retried forever.
+        var result = await TestDevices.DriveAsync(
+            svc.ApplySettingsAsync(new Dictionary<string, string> { [SgdKeys.Darkness] = "16" }, None), time);
         Assert.Equal([SgdKeys.Darkness], result.Rejected);
+        Assert.Equal(3, printer.SetVarRequests.Count(k => k == SgdKeys.Darkness));
         Assert.Equal("20.0", svc.Snapshot.Profile!.Get(SgdKeys.Darkness));
         Assert.Empty(svc.Snapshot.PendingCommitKeys);
     }
@@ -139,6 +142,31 @@ public class DeviceServiceSettingsTests
     /// setvar in the same call already reached the printer and, on this hardware, persists without ^JU S, so
     /// leaving the app showing the pre-apply values would be a lie about the device state.
     /// </summary>
+    /// <summary>
+    /// Measured on the ZD220t during the M2a investigation: a setvar can silently not take, and the value
+    /// reads back unchanged. Reporting that as a refusal would leave the app showing a value the printer is
+    /// one retry away from holding, so the write is retried after a settle before it counts as refused.
+    /// </summary>
+    [Fact]
+    public async Task A_setvar_that_does_not_take_is_retried_rather_than_reported_as_refused()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        printer.DropNextSetVarFor.Add(SgdKeys.Darkness);
+        var (svc, _, _, time) = TestDevices.CreateTimed(dir, printer);
+        await using var _ = svc;
+        await svc.StartAsync(None);
+
+        var result = await TestDevices.DriveAsync(
+            svc.ApplySettingsAsync(new Dictionary<string, string> { [SgdKeys.Darkness] = "16" }, None), time);
+
+        Assert.Empty(result.Rejected);
+        Assert.Equal(2, printer.SetVarRequests.Count(k => k == SgdKeys.Darkness));
+        Assert.Equal("16.0", printer.Sgd[SgdKeys.Darkness]);
+        Assert.Equal("16.0", svc.Snapshot.Profile!.Get(SgdKeys.Darkness));
+        Assert.Contains(SgdKeys.Darkness, svc.Snapshot.PendingCommitKeys);
+    }
+
     [Fact]
     public async Task Publishes_what_the_printer_holds_when_a_multikey_apply_fails_partway()
     {

@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using LabelStudio.Devices.Capabilities;
 using LabelStudio.Devices.Discovery;
 
 namespace LabelStudio.Devices.Simulation;
@@ -18,6 +19,7 @@ public sealed record SimulatedCalibrationOutcome(bool FindsGap, int LengthDots);
 public sealed partial class SimulatedPrinter
 {
     private DateTimeOffset? _calibratingUntil;
+    private int _unsettledLength = 1000;
 
     public SimulatedPrinter() => SavedSgd = new Dictionary<string, string>(Sgd, StringComparer.Ordinal);
 
@@ -61,6 +63,10 @@ public sealed partial class SimulatedPrinter
     public HashSet<string> SilentKeys { get; } = new(StringComparer.Ordinal);
     /// <summary>Keys that answer getvar but ignore setvar.</summary>
     public HashSet<string> ReadOnlyKeys { get; } = new(StringComparer.Ordinal);
+    /// <summary>Keys whose very next setvar is silently dropped, then accepted: the measured "it didn't take" race.</summary>
+    public HashSet<string> DropNextSetVarFor { get; } = new(StringComparer.Ordinal);
+    /// <summary>When true, zpl.label_length answers a different value on every read and never settles.</summary>
+    public bool LabelLengthNeverSettles { get; set; }
     public List<string> ReceivedJobs { get; } = [];
     public List<string> GetVarRequests { get; } = [];
     public List<string> SetVarRequests { get; } = [];
@@ -104,13 +110,22 @@ public sealed partial class SimulatedPrinter
         {
             var key = m.Groups[1].Value;
             GetVarRequests.Add(key);
-            if (!SilentKeys.Contains(key)) output.Append('"').Append(Sgd.GetValueOrDefault(key, "?")).Append('"');
+            if (SilentKeys.Contains(key)) continue;
+            // A length that answers a new value on every read models a firmware glitch or a read taken
+            // mid-write: the calibration runner must still terminate instead of waiting for it to confirm.
+            var value = key == SgdKeys.LabelLength && LabelLengthNeverSettles
+                ? (++_unsettledLength).ToString(System.Globalization.CultureInfo.InvariantCulture)
+                : Sgd.GetValueOrDefault(key, "?");
+            output.Append('"').Append(value).Append('"');
         }
         foreach (Match m in SetVarPattern().Matches(input))
         {
             var key = m.Groups[1].Value;
             SetVarRequests.Add(key);
-            if (!ReadOnlyKeys.Contains(key) && !SilentKeys.Contains(key) && Sgd.ContainsKey(key)) Sgd[key] = m.Groups[2].Value;
+            if (ReadOnlyKeys.Contains(key) || SilentKeys.Contains(key) || !Sgd.ContainsKey(key)) continue;
+            // Measured on the ZD220t: a setvar can silently not take. DropNextSetVarFor models that once per key.
+            if (DropNextSetVarFor.Remove(key)) continue;
+            Sgd[key] = m.Groups[2].Value;
         }
         if (input.Contains("~PP", StringComparison.Ordinal)) Paused = true;
         if (input.Contains("~PS", StringComparison.Ordinal)) Paused = false;

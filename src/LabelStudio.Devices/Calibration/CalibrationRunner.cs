@@ -56,8 +56,13 @@ public sealed class CalibrationRunner(TimeProvider time)
                 if (candidate == length) break;
                 candidate = length;
             }
-            else if (elapsed >= traits.CalibrationTimeout)
+
+            // An absolute deadline, not one that only applies while the length is unchanged: a length that
+            // keeps reporting a different value never confirms, and without this the loop would spin inside
+            // the exclusive session gate for the rest of the session, blocking every other device command.
+            if (elapsed >= traits.CalibrationTimeout)
             {
+                if (candidate is not null) return CalibrationResult.Failed(CalibrationFailure.Timeout);
                 measuredNoChange = true; // no fault, no change: the printer re-measured the same media
                 break;
             }

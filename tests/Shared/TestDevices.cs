@@ -41,6 +41,18 @@ internal static class TestDevices
     }
 
     /// <summary>Advances the fake clock in steps until <paramref name="task"/> completes (at most 400 steps).</summary>
+    public static async Task DriveAsync(Task task, FakeTimeProvider time, TimeSpan? step = null)
+    {
+        for (var i = 0; i < 400 && !task.IsCompleted; i++)
+        {
+            time.Advance(step ?? TimeSpan.FromMilliseconds(250));
+            await Task.Delay(2);
+        }
+        Assert.True(task.IsCompleted, "Task did not complete while driving the fake clock.");
+        await task;
+    }
+
+    /// <summary>Advances the fake clock in steps until <paramref name="task"/> completes (at most 400 steps).</summary>
     public static async Task<T> DriveAsync<T>(Task<T> task, FakeTimeProvider time, TimeSpan? step = null)
     {
         for (var i = 0; i < 400 && !task.IsCompleted; i++)

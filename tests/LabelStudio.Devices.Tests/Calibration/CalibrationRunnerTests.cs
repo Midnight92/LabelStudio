@@ -34,6 +34,20 @@ public class CalibrationRunnerTests
         Assert.Equal("gap/notch", result.Detected[SgdKeys.MediaType]); // unchanged by ~JC, read back for display
     }
 
+    /// <summary>
+    /// The deadline has to be absolute. When the length answers a different value on every poll it never
+    /// confirms, and a timeout that only applied while the length was unchanged would spin forever inside
+    /// the exclusive session gate, blocking status polling and every other device command for the session.
+    /// </summary>
+    [Fact]
+    public async Task A_length_that_never_settles_times_out_instead_of_looping_forever()
+    {
+        var (session, profile, _, time) = await OpenAsync(p => p.LabelLengthNeverSettles = true);
+        var result = await Run(session, profile, time);
+        Assert.False(result.Succeeded);
+        Assert.Equal(CalibrationFailure.Timeout, result.Failure);
+    }
+
     /// <summary>Wrong sensing: ~18 labels over ~20 s, then media out with the length untouched.</summary>
     [Fact]
     public async Task No_gap_found_is_reported_as_incompatible_media()

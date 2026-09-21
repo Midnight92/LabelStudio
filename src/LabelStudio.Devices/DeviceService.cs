@@ -17,6 +17,10 @@ namespace LabelStudio.Devices;
 /// </summary>
 public sealed class DeviceService : IAsyncDisposable
 {
+    /// <summary>How long to let a setvar settle before reading it back again after a mismatch.</summary>
+    private static readonly TimeSpan SetvarSettle = TimeSpan.FromMilliseconds(300);
+    private const int SetvarAttempts = 3;
+
     private readonly IPrinterDiscovery _discovery;
     private readonly ITransportFactory _transports;
     private readonly CapabilityProber _prober;
@@ -126,13 +130,10 @@ public sealed class DeviceService : IAsyncDisposable
         {
             foreach (var (key, value) in writes)
             {
-                if (traits.WritableKeys[key] == WriteStrategy.Sgd) await session.SetSgdAsync(key, value, ct);
-                else await session.SendRawAsync(MediaSettingWriter.ToZpl(key, value), ct);
-
                 // Read each key back as it is written, not in a second pass. If a later write fails, the
                 // finally below still publishes what the printer actually holds — these values persist
                 // without ^JU S, so leaving the app showing the old ones would be a lie about the device.
-                var actual = await session.GetSgdAsync(key, SgdKeys.ProbeTimeout, ct);
+                var actual = await WriteVerifiedAsync(session, traits, key, value, ct);
                 readBack[key] = actual;
                 if (actual is not null) settings[key] = actual;
                 if (MediaSettingWriter.Matches(value, actual)) pending.Add(key);
@@ -177,6 +178,28 @@ public sealed class DeviceService : IAsyncDisposable
         var settings = new Dictionary<string, string>(profile.Settings, StringComparer.Ordinal);
         foreach (var (k, v) in values) settings[k] = v;
         Publish(Snapshot with { Profile = profile with { Settings = settings } });
+    }
+
+    /// <summary>
+    /// Writes one setting and returns what the printer actually holds afterwards.
+    /// A setvar can silently not take — measured during the M2a hardware investigation, where a restore read
+    /// back as the old value — so a mismatch is retried after a settle rather than reported as a refusal.
+    /// The first read-back is immediate, so the common case costs nothing.
+    /// </summary>
+    private async Task<string?> WriteVerifiedAsync(PrinterSession session, ModelTraits traits, string key, string value, CancellationToken ct)
+    {
+        string? actual = null;
+        for (var attempt = 1; attempt <= SetvarAttempts; attempt++)
+        {
+            if (attempt > 1) await Task.Delay(SetvarSettle, _time, ct);
+            if (traits.WritableKeys[key] == WriteStrategy.Sgd) await session.SetSgdAsync(key, value, ct);
+            else await session.SendRawAsync(MediaSettingWriter.ToZpl(key, value), ct);
+            actual = await session.GetSgdAsync(key, SgdKeys.ProbeTimeout, ct);
+            if (MediaSettingWriter.Matches(value, actual)) return actual;
+            _log.LogWarning("Setting {Key} to {Value} read back as {Actual} (attempt {Attempt} of {Attempts})",
+                key, value, actual, attempt, SetvarAttempts);
+        }
+        return actual;
     }
 
     private async Task SaveSnapshotAsync(PrinterSession session, CapabilityProfile profile, string reason, CancellationToken ct)
