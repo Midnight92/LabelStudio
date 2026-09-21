@@ -189,6 +189,15 @@ public sealed partial class MediaSetupViewModel : ObservableObject, IDisposable
             IsSpeedVisible = Has(p, SgdKeys.PrintSpeed);
             IsTearOffVisible = Has(p, SgdKeys.TearOff);
             IsLengthOnlyVisible = CanEdit && IsMediaTypeVisible && IsLabelLengthVisible;
+
+            // Darkness and TearOff bind to a Slider, whose Value throws on NaN even while the slider is merely
+            // hidden (IsDarknessVisible/IsTearOffVisible false) rather than removed from the tree — one NaN here
+            // used to abort the whole x:Bind Bindings.Update() pass for the page (M2a fix round 1). Coerce a
+            // missing reading — no printer connected, or a key this profile never answered (e.g. the simulator
+            // and ezpl.tear_off) — to the model's own range minimum. NumberBox-bound values (LabelLength,
+            // PrintWidth) keep NaN as their legitimate "no value" rendering below, unaffected by this.
+            if (!_queued.ContainsKey(SgdKeys.Darkness)) Darkness = NumberOrMin(p?.Get(SgdKeys.Darkness), DarknessMin);
+            if (!_queued.ContainsKey(SgdKeys.TearOff)) TearOff = NumberOrMin(p?.Get(SgdKeys.TearOff), TearOffMin);
             if (p is null) return;
 
             // Keys the user is still editing (queued, not yet sent) keep their on-screen value.
@@ -197,8 +206,6 @@ public sealed partial class MediaSetupViewModel : ObservableObject, IDisposable
             if (!_queued.ContainsKey(SgdKeys.PrintMode)) PrintModeIndex = IndexOf(PrintModes, p.Get(SgdKeys.PrintMode));
             if (!_queued.ContainsKey(SgdKeys.LabelLength)) LabelLengthDots = Number(p.Get(SgdKeys.LabelLength));
             if (!_queued.ContainsKey(SgdKeys.PrintWidth)) PrintWidthDots = Number(p.Get(SgdKeys.PrintWidth));
-            if (!_queued.ContainsKey(SgdKeys.Darkness)) Darkness = Number(p.Get(SgdKeys.Darkness));
-            if (!_queued.ContainsKey(SgdKeys.TearOff)) TearOff = Number(p.Get(SgdKeys.TearOff));
             LabelLengthCaption = Caption(LabelLengthDots);
             PrintWidthCaption = Caption(PrintWidthDots);
             SpeedText = traits.FixedSpeedIps is { } ips
@@ -232,6 +239,10 @@ public sealed partial class MediaSetupViewModel : ObservableObject, IDisposable
 
     private static double Number(string? value) =>
         double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : double.NaN;
+
+    /// <summary>Like <see cref="Number"/>, but for values a Slider binds to, which must never be NaN.</summary>
+    private static double NumberOrMin(string? value, double min) =>
+        double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out var d) ? d : min;
 
     public void Dispose()
     {

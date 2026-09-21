@@ -127,5 +127,28 @@ public class MediaSetupViewModelTests
         using var vm = new MediaSetupViewModel(svc, new ImmediateDispatcher(), time, NullLogger<MediaSetupViewModel>.Instance);
         Assert.False(vm.IsConnected);
         Assert.False(vm.IsDarknessVisible);
+        // Slider-bound values must always be a real number: WinUI's RangeBase.Value throws ArgumentException on
+        // NaN, which aborts the whole x:Bind Bindings.Update() pass for the page (M2a fix round 1).
+        Assert.False(double.IsNaN(vm.Darkness));
+        Assert.False(double.IsNaN(vm.TearOff));
+    }
+
+    /// <summary>
+    /// Reproduces the crash a real run hit: the simulator never answers ezpl.tear_off (see
+    /// Rows_follow_the_probe_and_the_variant), so CapabilityProfile.Get returns null for it. Number(null) is
+    /// NaN, and that used to be assigned straight to TearOff even though the Slider that binds it is merely
+    /// hidden (IsTearOffVisible = false), not absent from the visual tree — so its Value binding still ran and
+    /// threw, aborting every binding after it on the page.
+    /// </summary>
+    [Fact]
+    public async Task TearOff_is_never_NaN_even_though_the_key_is_unsupported()
+    {
+        using var dir = new TempDir();
+        var (vm, _, _, svc) = await CreateAsync(dir);
+        await using var _ = svc;
+        using var __ = vm;
+        Assert.False(vm.IsTearOffVisible);
+        Assert.False(double.IsNaN(vm.TearOff));
+        Assert.False(double.IsNaN(vm.Darkness));
     }
 }
