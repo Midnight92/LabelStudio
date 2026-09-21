@@ -52,6 +52,41 @@ public class CompatibilityCheckerViewModelTests
     }
 
     [Fact]
+    public async Task Continuous_media_is_compatible_but_is_not_told_to_calibrate()
+    {
+        using var dir = new TempDir();
+        var (vm, svc) = await CreateAsync(dir);
+        await using var _ = svc;
+
+        vm.SensingIndex = 2; // continuous
+        vm.SizeAnswerIndex = 0; // yes
+
+        Assert.True(vm.IsVerdictVisible);
+        Assert.True(vm.IsCompatible);
+        // Continuous media has no gaps to measure, and calibrating against media the sensor can't read feeds
+        // roughly 18 labels before failing, so the verdict must not tell the operator to run SmartCal.
+        Assert.DoesNotContain("Run SmartCal", vm.VerdictBody);
+        Assert.Contains("length", vm.VerdictBody);
+        Assert.True(vm.IsLengthOnlyOffered);
+    }
+
+    [Fact]
+    public async Task Gap_media_that_suits_the_sensors_is_still_sent_to_calibration()
+    {
+        using var dir = new TempDir();
+        var (vm, svc) = await CreateAsync(dir);
+        await using var _ = svc;
+
+        vm.SensingIndex = 0; // gap/notch
+        vm.GapAnswerIndex = 0; // centred
+        vm.SizeAnswerIndex = 0; // yes
+
+        Assert.True(vm.IsCompatible);
+        Assert.Contains("Run SmartCal", vm.VerdictBody);
+        Assert.False(vm.IsLengthOnlyOffered);
+    }
+
+    [Fact]
     public async Task Reset_clears_every_answer()
     {
         using var dir = new TempDir();

@@ -109,6 +109,7 @@
   <data name="Checker.Reason.BelowMinimumSize" xml:space="preserve"><value>The labels are smaller than this printer's minimum size, so it can't calibrate on them.</value></data>
   <data name="Checker.Compatible.Title" xml:space="preserve"><value>This media should work</value></data>
   <data name="Checker.Compatible.Body" xml:space="preserve"><value>Its gap, mark and size suit this printer's sensors. Run SmartCal again with the media loaded straight and the cover closed.</value></data>
+  <data name="Checker.Compatible.Continuous.Body" xml:space="preserve"><value>Continuous media has no gaps or marks to measure, so SmartCal can't calibrate on it. Set the media type to continuous and enter the label length you want instead.</value></data>
   <data name="Checker.Incompatible.Title" xml:space="preserve"><value>This media can't be calibrated on this printer</value></data>
   <data name="Checker.Incompatible.Body" xml:space="preserve"><value>Retrying won't help. Either change to media that suits the printer, or use continuous mode with a set label length.</value></data>
   <data name="MediaSetup.Rejected" xml:space="preserve"><value>The printer didn't accept: {0}. It kept its previous value.</value></data>

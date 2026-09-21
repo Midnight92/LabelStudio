@@ -50,7 +50,7 @@
       </StackPanel>
 
       <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.IsDarknessVisible, Mode=OneWay}">
-        <Slider x:Uid="MediaSetup_Darkness" StepFrequency="1" TickFrequency="5" TickPlacement="Outside" MaxWidth="360" HorizontalAlignment="Left"
+        <Slider x:Uid="MediaSetup_Darkness" StepFrequency="1" TickFrequency="5" TickPlacement="Outside" Width="360" HorizontalAlignment="Left"
                 IsEnabled="{x:Bind ViewModel.CanEdit, Mode=OneWay}"
                 Minimum="{x:Bind ViewModel.DarknessMin, Mode=OneWay}" Maximum="{x:Bind ViewModel.DarknessMax, Mode=OneWay}"
                 Value="{x:Bind ViewModel.Darkness, Mode=TwoWay}" />
@@ -66,8 +66,8 @@
       </StackPanel>
 
       <Grid ColumnSpacing="16" Visibility="{x:Bind ViewModel.IsTearOffVisible, Mode=OneWay}">
-        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
-        <Slider x:Uid="MediaSetup_TearOff" StepFrequency="1" MaxWidth="360" HorizontalAlignment="Left"
+        <Grid.ColumnDefinitions><ColumnDefinition Width="360" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+        <Slider x:Uid="MediaSetup_TearOff" StepFrequency="1" Width="360" HorizontalAlignment="Left"
                 IsEnabled="{x:Bind ViewModel.CanEdit, Mode=OneWay}"
                 Minimum="{x:Bind ViewModel.TearOffMin, Mode=OneWay}" Maximum="{x:Bind ViewModel.TearOffMax, Mode=OneWay}"
                 Value="{x:Bind ViewModel.TearOff, Mode=TwoWay}" />

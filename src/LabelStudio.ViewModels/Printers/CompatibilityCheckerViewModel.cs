@@ -37,6 +37,8 @@ public sealed partial class CompatibilityCheckerViewModel : ObservableObject, ID
     [ObservableProperty] public partial bool ShowMarkQuestion { get; set; }
     [ObservableProperty] public partial bool IsVerdictVisible { get; set; }
     [ObservableProperty] public partial bool IsCompatible { get; set; }
+    /// <summary>True when the "use a set length instead" action applies: an incompatible media, or continuous media.</summary>
+    [ObservableProperty] public partial bool IsLengthOnlyOffered { get; set; }
     [ObservableProperty] public partial string? VerdictTitle { get; set; }
     [ObservableProperty] public partial string? VerdictBody { get; set; }
 
@@ -66,8 +68,14 @@ public sealed partial class CompatibilityCheckerViewModel : ObservableObject, ID
         IsCompatible = verdict?.IsCompatible == true;
         Reasons.Clear();
         foreach (var reason in verdict?.Reasons ?? []) Reasons.Add(Strings.Get($"Checker.Reason.{reason}"));
+        // Continuous media is compatible, but it has nothing for the sensors to measure: sending the operator to
+        // SmartCal would feed a long run of labels and fail. Point them at length-only setup instead.
+        var continuous = sensing == MediaSensing.Continuous;
+        IsLengthOnlyOffered = IsVerdictVisible && (!IsCompatible || continuous);
         VerdictTitle = Strings.Get(IsCompatible ? "Checker.Compatible.Title" : "Checker.Incompatible.Title");
-        VerdictBody = Strings.Get(IsCompatible ? "Checker.Compatible.Body" : "Checker.Incompatible.Body");
+        VerdictBody = Strings.Get(IsCompatible
+            ? continuous ? "Checker.Compatible.Continuous.Body" : "Checker.Compatible.Body"
+            : "Checker.Incompatible.Body");
     }
 
     private static bool? Answer(int index) => index switch { 0 => true, 1 => false, _ => null };
