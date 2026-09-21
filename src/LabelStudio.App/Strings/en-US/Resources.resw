@@ -12,8 +12,6 @@
   <data name="Nav_Templates.Content" xml:space="preserve"><value>Templates</value></data>
   <data name="Nav_Queue.Content" xml:space="preserve"><value>Print queue</value></data>
   <data name="Placeholder_GoToPrinters.Content" xml:space="preserve"><value>Go to Printers</value></data>
-  <data name="Placeholder_home_Title" xml:space="preserve"><value>Home</value></data>
-  <data name="Placeholder_home_Body" xml:space="preserve"><value>Recent templates, printer cards and quick actions arrive in milestone M2.</value></data>
   <data name="Placeholder_quickprint_Title" xml:space="preserve"><value>Quick Print</value></data>
   <data name="Placeholder_quickprint_Body" xml:space="preserve"><value>Printing a finished template from a few prompt fields arrives in milestone M4.</value></data>
   <data name="Placeholder_designer_Title" xml:space="preserve"><value>Designer</value></data>
@@ -23,7 +21,7 @@
   <data name="Placeholder_queue_Title" xml:space="preserve"><value>Print queue</value></data>
   <data name="Placeholder_queue_Body" xml:space="preserve"><value>Job queue, history and reprint arrive in milestone M4.</value></data>
   <data name="Placeholder_settings_Title" xml:space="preserve"><value>Settings</value></data>
-  <data name="Placeholder_settings_Body" xml:space="preserve"><value>Units, theme and density settings arrive in milestone M2.</value></data>
+  <data name="Placeholder_settings_Body" xml:space="preserve"><value>Units, theme and density settings arrive in a later update.</value></data>
   <data name="Printers_ListHeader.Text" xml:space="preserve"><value>USB printers</value></data>
   <data name="Printers_Refresh.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Refresh (F5)</value></data>
   <data name="Printers_Refresh.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Refresh printers</value></data>
@@ -112,4 +110,28 @@
   <data name="MediaDiagram_MarkLeft" xml:space="preserve"><value>Diagram: the black mark sensor reaches from the centre to the left edge only.</value></data>
   <data name="MediaDiagram_MinimumSize" xml:space="preserve"><value>Diagram: minimum label width and length.</value></data>
   <data name="MediaDiagram_TearBar" xml:space="preserve"><value>Diagram: where the label stops relative to the tear bar.</value></data>
+  <data name="Home_Title.Text" xml:space="preserve"><value>Home</value></data>
+  <data name="Home_Printers.Text" xml:space="preserve"><value>Printers</value></data>
+  <data name="Home_OpenPrinters.Content" xml:space="preserve"><value>All printers</value></data>
+  <data name="Home_NoPrinters.Text" xml:space="preserve"><value>No Zebra printer found on USB. Check the cable and power, and remove the sticker over the USB port on a new printer.</value></data>
+  <data name="Home_FindPrinters.Content" xml:space="preserve"><value>Search again</value></data>
+  <data name="Home_Calibrate.Content" xml:space="preserve"><value>Calibrate</value></data>
+  <data name="FirstRun_Find_Title.Text" xml:space="preserve"><value>Find your printer</value></data>
+  <data name="FirstRun_FindAgain.Content" xml:space="preserve"><value>Search again</value></data>
+  <data name="FirstRun_Media_Title.Text" xml:space="preserve"><value>Confirm your media</value></data>
+  <data name="FirstRun_Media_Body.Text" xml:space="preserve"><value>Load your labels with the gap or mark facing the sensor, and close the cover. This is what the printer currently expects:</value></data>
+  <data name="FirstRun_CheckMedia.Content" xml:space="preserve"><value>Not sure your labels suit this printer? Check media compatibility</value></data>
+  <data name="FirstRun_Test_Title.Text" xml:space="preserve"><value>Print a test label</value></data>
+  <data name="FirstRun_Test_Print.Content" xml:space="preserve"><value>Print test label (feeds 1 label)</value></data>
+  <data name="FirstRun_Test_Question.Text" xml:space="preserve"><value>Did the test label print correctly, starting at the top of a label?</value></data>
+  <data name="FirstRun_Test_Yes.Content" xml:space="preserve"><value>Yes, it's correct</value></data>
+  <data name="FirstRun_Test_No.Content" xml:space="preserve"><value>No</value></data>
+  <data name="FirstRun_Skip.Content" xml:space="preserve"><value>Skip setup</value></data>
+  <data name="FirstRun_Back.Content" xml:space="preserve"><value>Back</value></data>
+  <data name="FirstRun_Next.Content" xml:space="preserve"><value>Next</value></data>
+  <data name="BlinkCodes_Back.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Back</value></data>
+  <data name="BlinkCodes_Back.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Back</value></data>
+  <data name="BlinkCodes_Search.PlaceholderText" xml:space="preserve"><value>Search lights and button sequences</value></data>
+  <data name="BlinkCodes_NoReference.Text" xml:space="preserve"><value>There is no light and button reference for this printer model yet.</value></data>
+  <data name="BlinkCodes_NoMatches.Text" xml:space="preserve"><value>Nothing matches that search. Try a colour, such as "red", or a word like "flashing".</value></data>
 </root>

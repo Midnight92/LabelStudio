@@ -24,7 +24,7 @@ public sealed partial class MainWindow : Window
         SystemBackdrop = new MicaBackdrop();
         _navigation.Attach(Nav, ContentFrame);
         App.Services.GetRequiredService<WindowActivityState>().Attach(this);
-        _navigation.NavigateTo(PageKeys.Printers); // M1 lands on Printers; Home replaces this in M2
+        _navigation.NavigateTo(PageKeys.Home);
     }
 
     public ShellViewModel Shell { get; }

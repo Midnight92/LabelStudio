@@ -34,13 +34,16 @@ public sealed class NavigationService : INavigationService
         _current = _frame.Content switch
         {
             PrintersPage => PageKeys.Printers,
+            HomePage => PageKeys.Home,
             _ => _current,
         };
     }
 
     private static (Type Page, object? Parameter) PageFor(string key) => key switch
     {
+        PageKeys.Home => (typeof(HomePage), null),
         PageKeys.Printers => (typeof(PrintersPage), null),
+        PageKeys.BlinkCodes => (typeof(BlinkCodesPage), null),
         _ => (typeof(PlaceholderPage), key),
     };
 }

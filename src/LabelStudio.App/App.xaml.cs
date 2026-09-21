@@ -7,8 +7,10 @@ using LabelStudio.Devices.Simulation;
 using LabelStudio.Devices.Transport;
 using LabelStudio.App.Services;
 using LabelStudio.ViewModels;
+using LabelStudio.ViewModels.Home;
 using LabelStudio.ViewModels.Notifications;
 using LabelStudio.ViewModels.Printers;
+using LabelStudio.ViewModels.Reference;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
@@ -70,7 +72,9 @@ public partial class App : Application
             .CreateLogger();
         services.AddLogging(b => b.AddDebug().AddSerilog(fileLog, dispose: true).SetMinimumLevel(LogLevel.Debug));
         services.AddSingleton(TimeProvider.System);
-        services.AddSingleton<ISettingsService>(_ => new SettingsService(new JsonFileStore<AppSettings>(AppDataPaths.SettingsFile)));
+        var settings = new SettingsService(new JsonFileStore<AppSettings>(AppDataPaths.SettingsFile));
+        services.AddSingleton<ISettingsService>(settings);
+        services.AddSingleton(StartupState.From(settings.Current)); // before DeviceService records a printer
         services.AddSingleton<IProfileCache>(_ => new ProfileCache(AppDataPaths.ProfilesDirectory));
         services.AddSingleton<IConfigurationSnapshotStore>(_ => new ConfigurationSnapshotStore(AppDataPaths.ConfigBackupsDirectory));
         services.AddSingleton(new CapabilityProber());
@@ -103,6 +107,9 @@ public partial class App : Application
         services.AddTransient<MediaSetupViewModel>();
         services.AddTransient<CompatibilityCheckerViewModel>();
         services.AddTransient<PrintersViewModel>();
+        services.AddTransient<BlinkCodesViewModel>();
+        services.AddTransient<FirstRunViewModel>();
+        services.AddTransient<HomeViewModel>();
         return services.BuildServiceProvider();
     }
 

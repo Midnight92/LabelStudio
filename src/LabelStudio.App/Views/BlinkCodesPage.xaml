@@ -1,0 +1,38 @@
+<Page x:Class="LabelStudio.App.Views.BlinkCodesPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:app="using:LabelStudio.App"
+      xmlns:vm="using:LabelStudio.ViewModels.Reference">
+  <Grid Padding="32,22" RowSpacing="16" MaxWidth="880" HorizontalAlignment="Left">
+    <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /><RowDefinition Height="*" /></Grid.RowDefinitions>
+    <StackPanel Orientation="Horizontal" Spacing="8">
+      <Button x:Uid="BlinkCodes_Back" Click="OnBack"><FontIcon Glyph="&#xE72B;" FontSize="14" /></Button>
+      <TextBlock Text="{x:Bind ViewModel.ModelHeading}" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center" />
+    </StackPanel>
+    <AutoSuggestBox Grid.Row="1" x:Uid="BlinkCodes_Search" QueryIcon="Find" MaxWidth="420" HorizontalAlignment="Left"
+                    Text="{x:Bind ViewModel.SearchText, Mode=TwoWay}" />
+    <ScrollViewer Grid.Row="2">
+      <StackPanel Spacing="8">
+        <TextBlock x:Uid="BlinkCodes_NoReference" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                   Visibility="{x:Bind ViewModel.HasNoReference}" />
+        <TextBlock x:Uid="BlinkCodes_NoMatches" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                   Visibility="{x:Bind ViewModel.HasNoMatches, Mode=OneWay}" />
+        <ItemsControl ItemsSource="{x:Bind ViewModel.Items}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:BlinkCodeRow">
+              <Border Style="{StaticResource CardStyle}" Margin="0,0,0,8">
+                <StackPanel Spacing="4">
+                  <TextBlock Text="{x:Bind Kind}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                  <TextBlock Text="{x:Bind Pattern}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                  <TextBlock Text="{x:Bind Meaning}" TextWrapping="Wrap" />
+                  <TextBlock Text="{x:Bind Action}" TextWrapping="Wrap" />
+                  <TextBlock Text="{x:Bind Source}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</Page>

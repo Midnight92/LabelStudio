@@ -150,4 +150,5 @@
   <data name="BlinkCode.ZD220.ReleaseFeedAfterThirdFlash.Pattern" xml:space="preserve"><value>Hold FEED 2 s or more past the third flash</value></data>
   <data name="BlinkCode.ZD220.ReleaseFeedAfterThirdFlash.Meaning" xml:space="preserve"><value>Exits Advanced mode without making a change and returns to normal operation.</value></data>
   <data name="BlinkCode.ZD220.ReleaseFeedAfterThirdFlash.Action" xml:space="preserve"><value>Keep holding FEED for 2 or more seconds after the third flash, then release.</value></data>
+  <data name="FirstRun.StepOf" xml:space="preserve"><value>Step {0} of {1}</value></data>
 </root>

@@ -1,0 +1,46 @@
+<Page x:Class="LabelStudio.App.Views.HomePage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:app="using:LabelStudio.App"
+      xmlns:views="using:LabelStudio.App.Views"
+      xmlns:home="using:LabelStudio.ViewModels.Home">
+  <ScrollViewer>
+    <StackPanel Padding="32,22" Spacing="16">
+      <TextBlock x:Uid="Home_Title" Style="{StaticResource TitleTextBlockStyle}" />
+
+      <views:FirstRunView ViewModel="{x:Bind ViewModel.FirstRun}" Visibility="{x:Bind ViewModel.ShowFirstRun, Mode=OneWay}" />
+
+      <StackPanel Spacing="12" Visibility="{x:Bind app:XamlHelpers.CollapsedWhen(ViewModel.ShowFirstRun), Mode=OneWay}">
+        <Grid>
+          <TextBlock x:Uid="Home_Printers" Style="{StaticResource SubtitleTextBlockStyle}" />
+          <HyperlinkButton x:Uid="Home_OpenPrinters" HorizontalAlignment="Right" Command="{x:Bind ViewModel.OpenPrintersCommand}" />
+        </Grid>
+        <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasNoPrinters, Mode=OneWay}">
+          <TextBlock x:Uid="Home_NoPrinters" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+          <Button x:Uid="Home_FindPrinters" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.FindPrintersCommand}" />
+        </StackPanel>
+        <ItemsControl ItemsSource="{x:Bind ViewModel.Printers}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate><StackPanel Orientation="Horizontal" Spacing="12" /></ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="home:HomePrinterCard">
+              <Border Style="{StaticResource CardStyle}" Width="280">
+                <StackPanel Spacing="8">
+                  <TextBlock Text="{x:Bind Name}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                  <TextBlock Text="{x:Bind Serial}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                  <StackPanel Orientation="Horizontal" Spacing="6" Visibility="{x:Bind app:XamlHelpers.VisibleWhenNotNull(Status)}">
+                    <Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="{x:Bind app:XamlHelpers.ToneBrush(Status.Tone)}" />
+                    <FontIcon Glyph="{x:Bind Status.Glyph}" FontSize="12" />
+                    <TextBlock Text="{x:Bind Status.Title}" />
+                  </StackPanel>
+                  <Button x:Uid="Home_Calibrate" IsEnabled="{x:Bind CanCalibrate}" Click="OnCalibrateClicked" Tag="{x:Bind}" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</Page>
