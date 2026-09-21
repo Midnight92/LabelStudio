@@ -1,0 +1,69 @@
+<UserControl x:Class="LabelStudio.App.Views.Printers.SmartCalPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="using:LabelStudio.App"
+             xmlns:vm="using:LabelStudio.ViewModels.Printers">
+  <Border Style="{StaticResource CardStyle}">
+    <StackPanel Spacing="12">
+      <TextBlock x:Uid="SmartCal_Title" Style="{StaticResource SubtitleTextBlockStyle}" />
+      <TextBlock x:Uid="SmartCal_Intro" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+      <InfoBar x:Uid="SmartCal_Suggestion" Severity="Informational" IsClosable="False"
+               IsOpen="{x:Bind ViewModel.SuggestCalibration, Mode=OneWay}">
+        <InfoBar.ActionButton>
+          <Button x:Uid="SmartCal_Dismiss" Command="{x:Bind ViewModel.DismissSuggestionCommand, Mode=OneWay}" />
+        </InfoBar.ActionButton>
+      </InfoBar>
+      <ItemsControl ItemsSource="{x:Bind ViewModel.Checklist, Mode=OneWay}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:ChecklistRow">
+            <StackPanel Orientation="Horizontal" Spacing="8" Padding="0,2">
+              <FontIcon Glyph="{x:Bind Glyph}" FontSize="14" />
+              <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" />
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <TextBlock Text="{x:Bind ViewModel.FeedNotice, Mode=OneWay}" TextWrapping="Wrap"
+                 Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button x:Uid="SmartCal_Run" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.RunSmartCalCommand, Mode=OneWay}" />
+        <ProgressRing IsActive="{x:Bind ViewModel.IsRunning, Mode=OneWay}" Width="20" Height="20"
+                      Visibility="{x:Bind ViewModel.IsRunning, Mode=OneWay}" />
+        <TextBlock x:Uid="SmartCal_Running" VerticalAlignment="Center" Visibility="{x:Bind ViewModel.IsRunning, Mode=OneWay}" />
+      </StackPanel>
+
+      <!-- Success: what the printer measured. -->
+      <InfoBar x:Uid="SmartCal_Succeeded" Severity="Success" IsClosable="False" IsOpen="{x:Bind ViewModel.IsSucceeded, Mode=OneWay}">
+        <InfoBar.Content>
+          <StackPanel Spacing="4" Padding="0,0,0,12">
+            <ItemsControl ItemsSource="{x:Bind ViewModel.DetectedRows, Mode=OneWay}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="vm:KeyValueRow">
+                  <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+                    <TextBlock Text="{x:Bind Label}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <TextBlock Grid.Column="1" Text="{x:Bind Value}" Style="{StaticResource NumericValueTextStyle}" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBlock x:Uid="SmartCal_NoChange" TextWrapping="Wrap" Visibility="{x:Bind ViewModel.MeasuredNoChange, Mode=OneWay}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Button x:Uid="SmartCal_TestPrint" Command="{x:Bind ViewModel.PrintTestLabelCommand, Mode=OneWay}" />
+          </StackPanel>
+        </InfoBar.Content>
+      </InfoBar>
+
+      <!-- Failure: plain language cause + fix; incompatible-media path offered. -->
+      <InfoBar Severity="Error" IsClosable="False" IsOpen="{x:Bind ViewModel.IsFailed, Mode=OneWay}"
+               Title="{x:Bind ViewModel.FailureTitle, Mode=OneWay}" Message="{x:Bind ViewModel.FailureBody, Mode=OneWay}">
+        <InfoBar.ActionButton>
+          <Button x:Uid="SmartCal_CheckCompatibility" Command="{x:Bind ViewModel.CheckCompatibilityCommand, Mode=OneWay}"
+                  Visibility="{x:Bind ViewModel.ShowCompatibilityAction, Mode=OneWay}" />
+        </InfoBar.ActionButton>
+      </InfoBar>
+      <InfoBar Severity="Error" IsClosable="True" IsOpen="{x:Bind app:XamlHelpers.IsNotNull(ViewModel.CommandError), Mode=OneWay}"
+               Message="{x:Bind ViewModel.CommandError, Mode=OneWay}" />
+    </StackPanel>
+  </Border>
+</UserControl>

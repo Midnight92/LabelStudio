@@ -1,0 +1,68 @@
+<UserControl x:Class="LabelStudio.App.Views.Printers.CompatibilityCheckerPanel"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="using:LabelStudio.App"
+             xmlns:controls="using:LabelStudio.App.Controls">
+  <StackPanel Spacing="16">
+    <TextBlock x:Uid="Checker_Intro" TextWrapping="Wrap" Visibility="{x:Bind ViewModel.IsAvailable, Mode=OneWay}" />
+    <TextBlock x:Uid="Checker_Unavailable" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+               Visibility="{x:Bind app:XamlHelpers.CollapsedWhen(ViewModel.IsAvailable), Mode=OneWay}" />
+
+    <StackPanel Spacing="16" Visibility="{x:Bind ViewModel.IsAvailable, Mode=OneWay}">
+      <RadioButtons x:Uid="Checker_Sensing" SelectedIndex="{x:Bind ViewModel.SensingIndex, Mode=TwoWay}" MaxColumns="3">
+        <RadioButton x:Uid="Checker_Sensing_Gap" />
+        <RadioButton x:Uid="Checker_Sensing_Mark" />
+        <RadioButton x:Uid="Checker_Sensing_Continuous" />
+      </RadioButtons>
+
+      <Grid ColumnSpacing="16" Visibility="{x:Bind ViewModel.ShowGapQuestion, Mode=OneWay}">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+        <controls:MediaDiagram Kind="GapCentre" />
+        <RadioButtons Grid.Column="1" x:Uid="Checker_GapQuestion" SelectedIndex="{x:Bind ViewModel.GapAnswerIndex, Mode=TwoWay}" MaxColumns="2">
+          <RadioButton x:Uid="Checker_Yes" />
+          <RadioButton x:Uid="Checker_No" />
+        </RadioButtons>
+      </Grid>
+
+      <Grid ColumnSpacing="16" Visibility="{x:Bind ViewModel.ShowMarkQuestion, Mode=OneWay}">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+        <controls:MediaDiagram Kind="MarkLeft" />
+        <RadioButtons Grid.Column="1" x:Uid="Checker_MarkQuestion" SelectedIndex="{x:Bind ViewModel.MarkAnswerIndex, Mode=TwoWay}" MaxColumns="2">
+          <RadioButton x:Uid="Checker_Yes2" />
+          <RadioButton x:Uid="Checker_No2" />
+        </RadioButtons>
+      </Grid>
+
+      <Grid ColumnSpacing="16">
+        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+        <controls:MediaDiagram Kind="MinimumSize" />
+        <RadioButtons Grid.Column="1" Header="{x:Bind ViewModel.SizeQuestion, Mode=OneWay}" SelectedIndex="{x:Bind ViewModel.SizeAnswerIndex, Mode=TwoWay}" MaxColumns="2">
+          <RadioButton x:Uid="Checker_Yes3" />
+          <RadioButton x:Uid="Checker_No3" />
+        </RadioButtons>
+      </Grid>
+
+      <InfoBar IsClosable="False" IsOpen="{x:Bind ViewModel.IsVerdictVisible, Mode=OneWay}"
+               Severity="{x:Bind app:XamlHelpers.VerdictSeverity(ViewModel.IsCompatible), Mode=OneWay}"
+               Title="{x:Bind ViewModel.VerdictTitle, Mode=OneWay}" Message="{x:Bind ViewModel.VerdictBody, Mode=OneWay}"
+               AutomationProperties.LiveSetting="Assertive">
+        <InfoBar.Content>
+          <StackPanel Spacing="8" Padding="0,0,0,12">
+            <ItemsControl ItemsSource="{x:Bind ViewModel.Reasons, Mode=OneWay}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="x:String">
+                  <TextBlock Text="{x:Bind}" TextWrapping="Wrap" Margin="0,2" />
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button x:Uid="Checker_UseLengthOnly" Command="{x:Bind ViewModel.UseLengthOnlyCommand, Mode=OneWay}"
+                      Visibility="{x:Bind app:XamlHelpers.CollapsedWhen(ViewModel.IsCompatible), Mode=OneWay}" />
+              <Button x:Uid="Checker_StartOver" Command="{x:Bind ViewModel.ResetCommand, Mode=OneWay}" />
+            </StackPanel>
+          </StackPanel>
+        </InfoBar.Content>
+      </InfoBar>
+    </StackPanel>
+  </StackPanel>
+</UserControl>

@@ -3,13 +3,14 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:app="using:LabelStudio.App"
       xmlns:vm="using:LabelStudio.ViewModels.Printers"
-      Unloaded="OnUnloaded">
+      xmlns:printers="using:LabelStudio.App.Views.Printers"
+      xmlns:status="using:LabelStudio.ViewModels.Status">
   <Page.Resources>
     <DataTemplate x:Key="KeyValueTemplate" x:DataType="vm:KeyValueRow">
       <Grid ColumnSpacing="12" Padding="0,4">
         <Grid.ColumnDefinitions><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
         <TextBlock Text="{x:Bind Label}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-        <TextBlock Grid.Column="1" Text="{x:Bind Value}" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+        <TextBlock Grid.Column="1" Text="{x:Bind Value}" Style="{StaticResource NumericValueTextStyle}" />
       </Grid>
     </DataTemplate>
   </Page.Resources>
@@ -35,6 +36,12 @@
               <StackPanel Grid.Column="1">
                 <TextBlock Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
                 <TextBlock Text="{x:Bind Serial}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <StackPanel Orientation="Horizontal" Spacing="6" Margin="0,2,0,0"
+                            Visibility="{x:Bind app:XamlHelpers.VisibleWhenNotNull(Status)}">
+                  <Ellipse Width="8" Height="8" VerticalAlignment="Center" Fill="{x:Bind app:XamlHelpers.ToneBrush(Status.Tone)}" />
+                  <FontIcon Glyph="{x:Bind Status.Glyph}" FontSize="12" />
+                  <TextBlock Text="{x:Bind Status.Title}" Style="{StaticResource CaptionTextBlockStyle}" />
+                </StackPanel>
                 <TextBlock x:Uid="Printers_CurrentBadge" Visibility="{x:Bind IsCurrent}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
               </StackPanel>
             </Grid>
@@ -75,7 +82,7 @@
         </Grid>
 
         <!-- Status card: replaces LED blink interpretation with words (spec §5). -->
-        <InfoBar IsOpen="True" IsClosable="False"
+        <InfoBar x:Name="StatusCard" IsOpen="True" IsClosable="False"
                  Severity="{x:Bind app:XamlHelpers.ToSeverity(ViewModel.Status.Tone), Mode=OneWay}"
                  Title="{x:Bind ViewModel.Status.Title, Mode=OneWay}"
                  Message="{x:Bind ViewModel.Status.Body, Mode=OneWay}"
@@ -85,34 +92,75 @@
                     Visibility="{x:Bind app:XamlHelpers.VisibleWhenNotNull(ViewModel.Status.ActionLabel), Mode=OneWay}" />
           </InfoBar.ActionButton>
         </InfoBar>
+        <HyperlinkButton x:Uid="Printers_BlinkCodesLink" Command="{x:Bind ViewModel.OpenBlinkCodesCommand}" Padding="0" />
         <InfoBar Severity="Error" IsClosable="True"
                  IsOpen="{x:Bind app:XamlHelpers.IsNotNull(ViewModel.CommandError), Mode=OneWay}"
                  Message="{x:Bind ViewModel.CommandError, Mode=OneWay}" />
 
-        <SelectorBar SelectionChanged="OnSectionChanged">
-          <SelectorBarItem x:Uid="Printers_Overview" Tag="overview" IsSelected="True" />
-          <SelectorBarItem x:Uid="Printers_Capabilities" Tag="capabilities" />
+        <SelectorBar x:Name="Tabs" SelectionChanged="OnTabChanged">
+          <SelectorBarItem x:Uid="Printers_Overview" Tag="Overview" IsSelected="True" />
+          <SelectorBarItem x:Uid="Printers_Calibration" Tag="Calibration" />
+          <SelectorBarItem x:Uid="Printers_Capabilities" Tag="Capabilities" />
         </SelectorBar>
 
-        <Grid x:Name="OverviewSection"><!-- toggled by the SelectorBar -->
-        <Grid ColumnSpacing="16" Visibility="{x:Bind ViewModel.IsConnected, Mode=OneWay}">
-          <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
-          <Border Style="{StaticResource CardStyle}" VerticalAlignment="Top">
-            <StackPanel Spacing="8">
-              <TextBlock x:Uid="Printers_IdentityCard" Style="{StaticResource SubtitleTextBlockStyle}" />
-              <ItemsControl ItemsSource="{x:Bind ViewModel.Identity}" ItemTemplate="{StaticResource KeyValueTemplate}" />
-            </StackPanel>
-          </Border>
-          <Border Grid.Column="1" Style="{StaticResource CardStyle}" VerticalAlignment="Top">
-            <StackPanel Spacing="8">
-              <TextBlock x:Uid="Printers_MediaCard" Style="{StaticResource SubtitleTextBlockStyle}" />
-              <ItemsControl ItemsSource="{x:Bind ViewModel.Media}" ItemTemplate="{StaticResource KeyValueTemplate}" />
-            </StackPanel>
-          </Border>
+        <Grid x:Name="OverviewSection">
+          <Grid ColumnSpacing="16" RowSpacing="16" Visibility="{x:Bind ViewModel.IsConnected, Mode=OneWay}">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+            <Grid.RowDefinitions><RowDefinition Height="Auto" /><RowDefinition Height="Auto" /></Grid.RowDefinitions>
+            <Border Style="{StaticResource CardStyle}">
+              <StackPanel Spacing="8">
+                <TextBlock x:Uid="Printers_IdentityCard" Style="{StaticResource SubtitleTextBlockStyle}" />
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Identity}" ItemTemplate="{StaticResource KeyValueTemplate}" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+              <StackPanel Spacing="8">
+                <Grid>
+                  <TextBlock x:Uid="Printers_MediaCard" Style="{StaticResource SubtitleTextBlockStyle}" />
+                  <HyperlinkButton x:Uid="Printers_EditMedia" HorizontalAlignment="Right" Command="{x:Bind ViewModel.EditMediaCommand}" />
+                </Grid>
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Media}" ItemTemplate="{StaticResource KeyValueTemplate}" />
+              </StackPanel>
+            </Border>
+            <Border Grid.Row="1" Grid.ColumnSpan="2" Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasCounters, Mode=OneWay}">
+              <StackPanel Spacing="8">
+                <Grid>
+                  <TextBlock x:Uid="Printers_CountersCard" Style="{StaticResource SubtitleTextBlockStyle}" />
+                  <Button x:Uid="Printers_RefreshCounters" HorizontalAlignment="Right" Command="{x:Bind ViewModel.RefreshCountersCommand}">
+                    <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                  </Button>
+                </Grid>
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Counters}" ItemTemplate="{StaticResource KeyValueTemplate}" />
+                <Grid ColumnSpacing="12" Padding="0,4">
+                  <Grid.ColumnDefinitions><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                  <TextBlock x:Uid="Printers_AppCounter" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                  <TextBlock Grid.Column="1" Text="{x:Bind ViewModel.AppCounterText, Mode=OneWay}" Style="{StaticResource NumericValueTextStyle}" />
+                  <Button Grid.Column="2" x:Uid="Printers_ResetCounter" IsEnabled="{x:Bind ViewModel.CanResetCounter, Mode=OneWay}">
+                    <Button.Flyout>
+                      <Flyout x:Name="ResetFlyout">
+                        <StackPanel Spacing="12" MaxWidth="280">
+                          <TextBlock x:Uid="Printers_ResetCounterConfirm" TextWrapping="Wrap" />
+                          <Button x:Uid="Printers_ResetCounterYes" Style="{StaticResource AccentButtonStyle}"
+                                  Command="{x:Bind ViewModel.ResetCounterCommand}" Click="OnResetConfirmed" />
+                        </StackPanel>
+                      </Flyout>
+                    </Button.Flyout>
+                  </Button>
+                </Grid>
+              </StackPanel>
+            </Border>
+          </Grid>
+          <TextBlock x:Uid="Printers_OverviewEmpty" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                     Visibility="{x:Bind app:XamlHelpers.CollapsedWhen(ViewModel.IsConnected), Mode=OneWay}" />
         </Grid>
-        <TextBlock x:Uid="Printers_OverviewEmpty" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                   Visibility="{x:Bind app:XamlHelpers.CollapsedWhen(ViewModel.IsConnected), Mode=OneWay}" />
-        </Grid>
+
+        <StackPanel x:Name="CalibrationSection" Spacing="16" Visibility="Collapsed">
+          <printers:SmartCalPanel x:Name="SmartCalSection" ViewModel="{x:Bind ViewModel.Calibration}" />
+          <Expander x:Name="CheckerExpander" x:Uid="Printers_CheckerExpander" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch">
+            <printers:CompatibilityCheckerPanel ViewModel="{x:Bind ViewModel.Checker}" />
+          </Expander>
+          <printers:MediaSetupPanel x:Name="MediaSetupSection" ViewModel="{x:Bind ViewModel.MediaSetup}" />
+        </StackPanel>
 
         <StackPanel x:Name="CapabilitiesPanel" Spacing="12" Visibility="Collapsed">
           <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.IsConnected, Mode=OneWay}">
