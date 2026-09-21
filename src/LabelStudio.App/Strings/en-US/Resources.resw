@@ -53,6 +53,7 @@
   <data name="Printers_CheckerExpander.Header" xml:space="preserve"><value>Media compatibility check</value></data>
   <data name="SmartCal_Title.Text" xml:space="preserve"><value>SmartCal</value></data>
   <data name="SmartCal_Intro.Text" xml:space="preserve"><value>Measures the loaded media so labels start in the right place. Run it after loading a new roll, a different size, or a new batch.</value></data>
+  <data name="SmartCal_Offline.Text" xml:space="preserve"><value>Connect a printer to calibrate it.</value></data>
   <data name="SmartCal_Suggestion.Title" xml:space="preserve"><value>New media?</value></data>
   <data name="SmartCal_Suggestion.Message" xml:space="preserve"><value>The media looks like it was changed. Run SmartCal so the printer measures it.</value></data>
   <data name="SmartCal_Dismiss.Content" xml:space="preserve"><value>Not now</value></data>

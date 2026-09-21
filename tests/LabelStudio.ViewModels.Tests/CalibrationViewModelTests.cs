@@ -17,9 +17,21 @@ public class CalibrationViewModelTests
         await using var _ = svc;
         await svc.StartAsync(CancellationToken.None);
         using var vm = new CalibrationViewModel(svc, new ImmediateDispatcher(), NullLogger<CalibrationViewModel>.Instance);
+        Assert.True(vm.IsConnected);
         Assert.True(vm.CanCalibrate);
         Assert.Contains("2", vm.FeedNotice);
         Assert.All(vm.Checklist, r => Assert.True(r.Ok));
+    }
+
+    [Fact]
+    public async Task Disconnected_shows_the_offline_state()
+    {
+        using var dir = new TempDir();
+        var (svc, _, _) = TestDevices.Create(dir);
+        await using var _ = svc;
+        using var vm = new CalibrationViewModel(svc, new ImmediateDispatcher(), NullLogger<CalibrationViewModel>.Instance);
+        Assert.False(vm.IsConnected);
+        Assert.False(vm.CanCalibrate);
     }
 
     [Fact]

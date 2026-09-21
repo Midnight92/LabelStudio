@@ -55,6 +55,9 @@ public sealed partial class CalibrationViewModel : ObservableObject, IDisposable
     [NotifyCanExecuteChangedFor(nameof(PrintTestLabelCommand))]
     public partial bool IsReady { get; set; }
 
+    /// <summary>False when no printer is connected, so the panel can say so instead of showing an empty checklist.</summary>
+    [ObservableProperty] public partial bool IsConnected { get; set; }
+
     // Bool views of State for XAML visibility (x:Bind functions can't take enum literals).
     public bool IsRunning => State == CalibrationUiState.Running;
     public bool IsSucceeded => State == CalibrationUiState.Succeeded;
@@ -117,6 +120,7 @@ public sealed partial class CalibrationViewModel : ObservableObject, IDisposable
     private void Apply(DeviceSnapshot s)
     {
         var connected = s.Connection == ConnectionState.Connected && s.Status is not null;
+        IsConnected = connected;
         FeedNotice = Strings.Format("Calibration.FeedNotice", _devices.Traits.CalibrationFeedLabels); // traits follow the connected model
         SuggestCalibration = connected && s.CalibrationSuggested;
         IsReady = connected && s.State == PrinterState.Ready && s.Activity == DeviceActivity.None;

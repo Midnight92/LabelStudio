@@ -7,6 +7,9 @@
     <StackPanel Spacing="12">
       <TextBlock x:Uid="SmartCal_Title" Style="{StaticResource SubtitleTextBlockStyle}" />
       <TextBlock x:Uid="SmartCal_Intro" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+      <!-- Offline state (spec §15): without this the panel is an empty checklist and a dead button. -->
+      <TextBlock x:Uid="SmartCal_Offline" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                 Visibility="{x:Bind app:XamlHelpers.CollapsedWhen(ViewModel.IsConnected), Mode=OneWay}" />
       <InfoBar x:Uid="SmartCal_Suggestion" Severity="Informational" IsClosable="False"
                IsOpen="{x:Bind ViewModel.SuggestCalibration, Mode=OneWay}">
         <InfoBar.ActionButton>
