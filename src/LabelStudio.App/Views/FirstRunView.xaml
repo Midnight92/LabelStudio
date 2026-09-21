@@ -1,0 +1,70 @@
+<UserControl x:Class="LabelStudio.App.Views.FirstRunView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:app="using:LabelStudio.App"
+             xmlns:controls="using:LabelStudio.App.Controls"
+             xmlns:printers="using:LabelStudio.App.Views.Printers"
+             xmlns:vm="using:LabelStudio.ViewModels.Printers">
+  <StackPanel Spacing="16" MaxWidth="720" HorizontalAlignment="Left">
+    <TextBlock Text="{x:Bind ViewModel.StepText, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+
+    <!-- 1. Find your printer -->
+    <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.IsFindStep, Mode=OneWay}">
+      <FontIcon Glyph="&#xE749;" FontSize="48" HorizontalAlignment="Left" />
+      <TextBlock x:Uid="FirstRun_Find_Title" Style="{StaticResource SubtitleTextBlockStyle}" />
+      <InfoBar IsOpen="True" IsClosable="False" Severity="{x:Bind app:XamlHelpers.ToSeverity(ViewModel.Status.Tone), Mode=OneWay}"
+               Title="{x:Bind ViewModel.Status.Title, Mode=OneWay}" Message="{x:Bind ViewModel.Status.Body, Mode=OneWay}" />
+      <Button x:Uid="FirstRun_FindAgain" Command="{x:Bind ViewModel.FindAgainCommand, Mode=OneWay}" />
+    </StackPanel>
+
+    <!-- 2. Confirm your media -->
+    <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.IsMediaStep, Mode=OneWay}">
+      <controls:MediaDiagram Kind="GapCentre" HorizontalAlignment="Left" />
+      <TextBlock x:Uid="FirstRun_Media_Title" Style="{StaticResource SubtitleTextBlockStyle}" />
+      <TextBlock x:Uid="FirstRun_Media_Body" TextWrapping="Wrap" />
+      <ItemsControl ItemsSource="{x:Bind ViewModel.MediaRows, Mode=OneWay}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:KeyValueRow">
+            <Grid ColumnSpacing="12">
+              <Grid.ColumnDefinitions><ColumnDefinition Width="140" /><ColumnDefinition Width="*" /></Grid.ColumnDefinitions>
+              <TextBlock Text="{x:Bind Label}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+              <TextBlock Grid.Column="1" Text="{x:Bind Value}" Style="{StaticResource NumericValueTextStyle}" />
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+      <HyperlinkButton x:Uid="FirstRun_CheckMedia" Command="{x:Bind ViewModel.CheckMediaCommand, Mode=OneWay}" Padding="0" />
+    </StackPanel>
+
+    <!-- 3. Run a calibration -->
+    <printers:SmartCalPanel ViewModel="{x:Bind ViewModel.Calibration, Mode=OneWay}" Visibility="{x:Bind ViewModel.IsCalibrateStep, Mode=OneWay}" />
+
+    <!-- 4. Print a test label -->
+    <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.IsTestPrintStep, Mode=OneWay}">
+      <FontIcon Glyph="&#xE749;" FontSize="48" HorizontalAlignment="Left" />
+      <TextBlock x:Uid="FirstRun_Test_Title" Style="{StaticResource SubtitleTextBlockStyle}" />
+      <Button x:Uid="FirstRun_Test_Print" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.PrintTestLabelCommand, Mode=OneWay}" />
+      <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.HasTestPrinted, Mode=OneWay}">
+        <TextBlock x:Uid="FirstRun_Test_Question" Style="{StaticResource BodyStrongTextBlockStyle}" />
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <Button x:Uid="FirstRun_Test_Yes" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.PrintedCorrectlyCommand, Mode=OneWay}" />
+          <Button x:Uid="FirstRun_Test_No" Command="{x:Bind ViewModel.PrintedWrongCommand, Mode=OneWay}" />
+        </StackPanel>
+      </StackPanel>
+    </StackPanel>
+
+    <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.ShowChecker, Mode=OneWay}">
+      <printers:CompatibilityCheckerPanel ViewModel="{x:Bind ViewModel.Checker, Mode=OneWay}" />
+    </Border>
+    <InfoBar Severity="Error" IsClosable="True" IsOpen="{x:Bind app:XamlHelpers.IsNotNull(ViewModel.CommandError), Mode=OneWay}"
+             Message="{x:Bind ViewModel.CommandError, Mode=OneWay}" />
+
+    <Grid>
+      <HyperlinkButton x:Uid="FirstRun_Skip" Command="{x:Bind ViewModel.SkipSetupCommand, Mode=OneWay}" />
+      <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+        <Button x:Uid="FirstRun_Back" Command="{x:Bind ViewModel.BackCommand, Mode=OneWay}" />
+        <Button x:Uid="FirstRun_Next" Style="{StaticResource AccentButtonStyle}" Command="{x:Bind ViewModel.NextCommand, Mode=OneWay}" />
+      </StackPanel>
+    </Grid>
+  </StackPanel>
+</UserControl>

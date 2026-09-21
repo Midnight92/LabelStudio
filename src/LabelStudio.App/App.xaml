@@ -14,6 +14,12 @@
         <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Padding" Value="16" />
       </Style>
+      <!-- Tabular figures for numeric values (spec §14 Typography; M1 audit #4). -->
+      <Style x:Key="NumericValueTextStyle" TargetType="TextBlock">
+        <Setter Property="Typography.NumeralAlignment" Value="Tabular" />
+        <Setter Property="IsTextSelectionEnabled" Value="True" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+      </Style>
     </ResourceDictionary>
   </Application.Resources>
 </Application>

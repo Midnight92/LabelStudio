@@ -65,4 +65,13 @@ public class PrinterSessionTests
         printer.Unplugged = true;
         await Assert.ThrowsAsync<IOException>(() => session.GetHostStatusAsync(CancellationToken.None));
     }
+
+    [Fact]
+    public async Task Setvar_changes_the_value_read_back()
+    {
+        var (session, printer) = await OpenAsync();
+        await session.SetSgdAsync("print.tone", "16.0", CancellationToken.None);
+        Assert.Equal("16.0", await session.GetSgdAsync("print.tone", TimeSpan.FromMilliseconds(50), CancellationToken.None));
+        Assert.Equal(["print.tone"], printer.SetVarRequests);
+    }
 }

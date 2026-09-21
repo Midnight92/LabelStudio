@@ -9,3 +9,6 @@ public sealed class PrinterUnavailableException(string message, PrinterUnavailab
 {
     public PrinterUnavailableReason Reason { get; } = reason;
 }
+
+/// <summary>A pre-change configuration backup could not be written, so the change was not sent.</summary>
+public sealed class ConfigurationBackupException(string message, Exception inner) : Exception(message, inner);

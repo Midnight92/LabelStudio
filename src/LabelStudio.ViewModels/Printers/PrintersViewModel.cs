@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using LabelStudio.Devices;
@@ -6,6 +7,7 @@ using LabelStudio.Devices.Capabilities;
 using LabelStudio.Devices.Status;
 using LabelStudio.ViewModels.Formatting;
 using LabelStudio.ViewModels.Status;
+using Microsoft.Extensions.Logging;
 
 namespace LabelStudio.ViewModels.Printers;
 
@@ -26,15 +28,26 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
         (SgdKeys.TearOff, "Row.TearOff", (v, _) => v),
     ];
 
+    // M2a: spec §5 Counters card.
+    public static readonly IReadOnlyList<string> CounterKeys = [SgdKeys.OdometerUserLabels, SgdKeys.OdometerTotal, SgdKeys.OdometerHeadClean];
+
     private readonly DeviceService _devices;
     private readonly IUiDispatcher _ui;
+    private readonly INavigationService _navigation;
+    private readonly UserCounterStore _counters;
+    private readonly ILogger<PrintersViewModel> _log;
     private CapabilityProfile? _shownProfile;
     private string? _shownCurrentSerial;
+    private StatusPresentation? _shownRowStatus;
+    private long? _printerLabelCount;
 
-    public PrintersViewModel(DeviceService devices, IUiDispatcher ui)
+    public PrintersViewModel(DeviceService devices, IUiDispatcher ui, INavigationService navigation, UserCounterStore counters,
+        CalibrationViewModel calibration, MediaSetupViewModel mediaSetup, CompatibilityCheckerViewModel checker, ILogger<PrintersViewModel> log)
     {
-        _devices = devices;
-        _ui = ui;
+        (_devices, _ui, _navigation, _counters, _log) = (devices, ui, navigation, counters, log);
+        (Calibration, MediaSetup, Checker) = (calibration, mediaSetup, checker);
+        Calibration.CompatibilityCheckRequested += OnCompatibilityCheckRequested;
+        Checker.LengthOnlyRequested += OnLengthOnlyRequested;
         Status = StatusPresenter.Present(devices.Snapshot, devices.Printers.Count);
         Heading = Strings.Get("Printers.NoSelection");
         PauseLabel = Strings.Get("Printers.Pause");
@@ -44,9 +57,14 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
         ApplyPrinters();
     }
 
+    public CalibrationViewModel Calibration { get; }
+    public MediaSetupViewModel MediaSetup { get; }
+    public CompatibilityCheckerViewModel Checker { get; }
+
     public ObservableCollection<PrinterListItem> Printers { get; } = [];
     public ObservableCollection<KeyValueRow> Identity { get; } = [];
     public ObservableCollection<KeyValueRow> Media { get; } = [];
+    public ObservableCollection<KeyValueRow> Counters { get; } = [];
     public ObservableCollection<SgdKeyRow> ProbedKeys { get; } = [];
 
     [ObservableProperty] public partial StatusPresentation Status { get; set; }
@@ -57,9 +75,17 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
     [ObservableProperty] public partial string? CommandError { get; set; }
     [ObservableProperty] public partial string? ActionHint { get; set; }
     [ObservableProperty] public partial bool IsConnecting { get; set; }
+    [ObservableProperty] public partial bool HasCounters { get; set; }
+    [ObservableProperty] public partial string? AppCounterText { get; set; }
+    [ObservableProperty] public partial PrinterTab SelectedTab { get; set; }
+    [ObservableProperty] public partial PrinterSection SelectedSection { get; set; }
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(TogglePauseCommand), nameof(ReprobeCommand))]
+    [NotifyCanExecuteChangedFor(nameof(ResetCounterCommand))]
+    public partial bool CanResetCounter { get; set; }
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(TogglePauseCommand), nameof(ReprobeCommand), nameof(RefreshCountersCommand))]
     public partial bool IsConnected { get; set; }
 
     /// <summary>Gates <see cref="PrintTestLabelCommand"/>: printing is only safe when the printer is actually ready.</summary>
@@ -71,6 +97,13 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(FeedCommand))]
     public partial bool CanFeed { get; set; }
+
+    /// <summary>Toasts, Home's Calibrate shortcut and in-page links land here.</summary>
+    public void ApplyDeepLink(PrinterDeepLink link)
+    {
+        SelectedTab = link.Tab;
+        SelectedSection = link.Section;
+    }
 
     [RelayCommand]
     private Task ConnectAsync(PrinterListItem? item) => item is null ? Task.CompletedTask : RunAsync(ct => _devices.ConnectAsync(item.Info, ct));
@@ -99,7 +132,68 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
         _ => Task.CompletedTask,
     };
 
-    private Task RunAsync(Func<CancellationToken, Task> action) => CommandGuard.RunAsync(action, e => CommandError = e);
+    // M2a ------------------------------------------------------------------------------------------------
+
+    [RelayCommand]
+    private void OpenBlinkCodes() => _navigation.NavigateTo(PageKeys.BlinkCodes);
+
+    [RelayCommand]
+    private void EditMedia() => ApplyDeepLink(new PrinterDeepLink(PrinterTab.Calibration, PrinterSection.MediaSetup));
+
+    [RelayCommand(CanExecute = nameof(IsConnected))]
+    private Task RefreshCountersAsync() => RunAsync(ct => _devices.ReadSettingsAsync(CounterKeys, ct));
+
+    /// <summary>Confirmation is a flyout in the view; this resets the app counter to zero at the printer's current count.</summary>
+    [RelayCommand(CanExecute = nameof(CanResetCounter))]
+    private void ResetCounter()
+    {
+        if (_devices.Snapshot.Profile is not { } p || _printerLabelCount is not { } count) return;
+        SaveBaselineBestEffort(p.Serial, count);
+        AppCounterText = 0.ToString("N0", CultureInfo.CurrentCulture);
+    }
+
+    private void OnCompatibilityCheckRequested(object? sender, EventArgs e) => ApplyDeepLink(new PrinterDeepLink(PrinterTab.Calibration, PrinterSection.Checker));
+    private void OnLengthOnlyRequested(object? sender, EventArgs e) => ApplyDeepLink(new PrinterDeepLink(PrinterTab.Calibration, PrinterSection.LengthOnly));
+
+    private void ApplyCounters(CapabilityProfile? p)
+    {
+        Counters.Clear();
+        _printerLabelCount = null;
+        AppCounterText = null;
+        if (p is not null)
+        {
+            if (long.TryParse(p.Get(SgdKeys.OdometerUserLabels), NumberStyles.Integer, CultureInfo.InvariantCulture, out var labels))
+            {
+                _printerLabelCount = labels;
+                Counters.Add(new KeyValueRow(Strings.Get("Row.LabelsPrinted"), labels.ToString("N0", CultureInfo.CurrentCulture)));
+                var baseline = _counters.GetBaseline(p.Serial);
+                if (baseline is null || baseline > labels) // first sight, or the printer's own counter was reset below ours
+                {
+                    SaveBaselineBestEffort(p.Serial, labels);
+                    baseline = labels;
+                }
+                AppCounterText = (labels - baseline.Value).ToString("N0", CultureInfo.CurrentCulture);
+            }
+            foreach (var (key, label) in new[] { (SgdKeys.OdometerTotal, "Row.HeadDistance"), (SgdKeys.OdometerHeadClean, "Row.SinceHeadClean") })
+                if (OdometerReading.TryParse(p.Get(key), out var reading))
+                    Counters.Add(new KeyValueRow(Strings.Get(label), Strings.Format("Format.Distance", reading!.Inches, reading.Centimetres)));
+        }
+        HasCounters = Counters.Count > 0;
+        CanResetCounter = _printerLabelCount is not null;
+    }
+
+    private void SaveBaselineBestEffort(string serial, long value)
+    {
+        try { _counters.SetBaseline(serial, value); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            _log.LogWarning(ex, "Could not save the label-counter baseline for {Serial}", serial);
+        }
+    }
+
+    // ----------------------------------------------------------------------------------------------------
+
+    private Task RunAsync(Func<CancellationToken, Task> action) => CommandGuard.RunAsync(action, e => CommandError = e, _log);
 
     private void OnSnapshotChanged(object? sender, DeviceSnapshot s) => _ui.Post(() => Apply(s));
     private void OnPrintersChanged(object? sender, EventArgs e) => _ui.Post(ApplyPrinters);
@@ -110,9 +204,10 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
         IsConnected = s.Connection == ConnectionState.Connected;
         IsConnecting = s.Connection == ConnectionState.Connecting;
         IsPaused = s.Status?.Paused == true; // the printer pauses itself on faults, so this can be true even under a fault State
-        IsReady = IsConnected && s.State == PrinterState.Ready;
-        CanFeed = IsConnected && s.State is PrinterState.Ready or PrinterState.Paused;
+        IsReady = IsConnected && s.State == PrinterState.Ready && s.Activity == DeviceActivity.None;
+        CanFeed = IsConnected && s.State is PrinterState.Ready or PrinterState.Paused && s.Activity == DeviceActivity.None;
         ActionHint = !IsConnected ? Strings.Get("Printers.Hint.NotConnected")
+            : s.Activity == DeviceActivity.Calibrating ? Strings.Get("Printers.Hint.Calibrating")
             : s.State == PrinterState.Paused ? Strings.Get("Printers.Hint.Paused") // State-based: faults outrank Paused (see PrinterStateResolver)
             : s.State != PrinterState.Ready ? Strings.Get("Printers.Hint.Fault")
             : null;
@@ -128,14 +223,20 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
             Replace(ProbedKeys, s.Profile is null ? [] : SgdKeys.ProbeList.Select(k => s.Profile.Settings.TryGetValue(k, out var v)
                 ? new SgdKeyRow(k, v, true, Strings.Get("Sgd.Responded"), RespondedGlyph)
                 : new SgdKeyRow(k, "", false, Strings.Get("Sgd.NoResponse"), NoResponseGlyph)));
+            ApplyCounters(s.Profile);
         }
-        if (s.Printer?.Serial != _shownCurrentSerial) ApplyPrinters();
+        if (s.Printer?.Serial != _shownCurrentSerial || Status != _shownRowStatus) ApplyPrinters();
     }
 
     private void ApplyPrinters()
     {
         _shownCurrentSerial = _devices.Snapshot.Printer?.Serial;
-        Replace(Printers, _devices.Printers.Select(p => new PrinterListItem(p, p.FriendlyName, p.Serial, p.Serial == _shownCurrentSerial)));
+        _shownRowStatus = Status;
+        Replace(Printers, _devices.Printers.Select(p =>
+        {
+            var current = p.Serial == _shownCurrentSerial;
+            return new PrinterListItem(p, p.FriendlyName, p.Serial, current, current ? Status : null);
+        }));
         HasNoPrinters = _devices.Printers.Count == 0;
     }
 
@@ -159,5 +260,10 @@ public sealed partial class PrintersViewModel : ObservableObject, IDisposable
     {
         _devices.SnapshotChanged -= OnSnapshotChanged;
         _devices.PrintersChanged -= OnPrintersChanged;
+        Calibration.CompatibilityCheckRequested -= OnCompatibilityCheckRequested;
+        Checker.LengthOnlyRequested -= OnLengthOnlyRequested;
+        Calibration.Dispose();
+        MediaSetup.Dispose();
+        Checker.Dispose();
     }
 }

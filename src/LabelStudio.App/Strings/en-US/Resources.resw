@@ -12,8 +12,6 @@
   <data name="Nav_Templates.Content" xml:space="preserve"><value>Templates</value></data>
   <data name="Nav_Queue.Content" xml:space="preserve"><value>Print queue</value></data>
   <data name="Placeholder_GoToPrinters.Content" xml:space="preserve"><value>Go to Printers</value></data>
-  <data name="Placeholder_home_Title" xml:space="preserve"><value>Home</value></data>
-  <data name="Placeholder_home_Body" xml:space="preserve"><value>Recent templates, printer cards and quick actions arrive in milestone M2.</value></data>
   <data name="Placeholder_quickprint_Title" xml:space="preserve"><value>Quick Print</value></data>
   <data name="Placeholder_quickprint_Body" xml:space="preserve"><value>Printing a finished template from a few prompt fields arrives in milestone M4.</value></data>
   <data name="Placeholder_designer_Title" xml:space="preserve"><value>Designer</value></data>
@@ -23,7 +21,7 @@
   <data name="Placeholder_queue_Title" xml:space="preserve"><value>Print queue</value></data>
   <data name="Placeholder_queue_Body" xml:space="preserve"><value>Job queue, history and reprint arrive in milestone M4.</value></data>
   <data name="Placeholder_settings_Title" xml:space="preserve"><value>Settings</value></data>
-  <data name="Placeholder_settings_Body" xml:space="preserve"><value>Units, theme and density settings arrive in milestone M2.</value></data>
+  <data name="Placeholder_settings_Body" xml:space="preserve"><value>Units, theme and density settings arrive in a later update.</value></data>
   <data name="Printers_ListHeader.Text" xml:space="preserve"><value>USB printers</value></data>
   <data name="Printers_Refresh.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Refresh (F5)</value></data>
   <data name="Printers_Refresh.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Refresh printers</value></data>
@@ -40,4 +38,100 @@
   <data name="Printers_CapabilitiesIntro.Text" xml:space="preserve"><value>Settings this printer answered when probed. Settings it did not answer stay hidden elsewhere in the app.</value></data>
   <data name="Printers_Reprobe.Content" xml:space="preserve"><value>Probe again</value></data>
   <data name="Printers_CapabilitiesEmpty.Text" xml:space="preserve"><value>Connect a printer to see which settings it supports.</value></data>
+  <data name="Printers_Calibration.Text" xml:space="preserve"><value>Calibration</value></data>
+  <data name="Printers_BlinkCodesLink.Content" xml:space="preserve"><value>What do the printer's light and button mean?</value></data>
+  <data name="Printers_EditMedia.Content" xml:space="preserve"><value>Edit</value></data>
+  <data name="Printers_CountersCard.Text" xml:space="preserve"><value>Counters</value></data>
+  <data name="Printers_RefreshCounters.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Refresh counters</value></data>
+  <data name="Printers_RefreshCounters.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Refresh counters</value></data>
+  <data name="Printers_AppCounter.Text" xml:space="preserve"><value>Labels since reset</value></data>
+  <data name="Printers_ResetCounter.Content" xml:space="preserve"><value>Reset</value></data>
+  <data name="Printers_ResetCounterConfirm.Text" xml:space="preserve"><value>Reset the labels-since-reset counter to zero? The printer's own counters aren't changed.</value></data>
+  <data name="Printers_ResetCounterYes.Content" xml:space="preserve"><value>Reset counter</value></data>
+  <data name="Printers_CheckerExpander.Header" xml:space="preserve"><value>Media compatibility check</value></data>
+  <data name="SmartCal_Title.Text" xml:space="preserve"><value>SmartCal</value></data>
+  <data name="SmartCal_Intro.Text" xml:space="preserve"><value>Measures the loaded media so labels start in the right place. Run it after loading a new roll, a different size, or a new batch.</value></data>
+  <data name="SmartCal_Offline.Text" xml:space="preserve"><value>Connect a printer to calibrate it.</value></data>
+  <data name="SmartCal_Suggestion.Title" xml:space="preserve"><value>New media?</value></data>
+  <data name="SmartCal_Suggestion.Message" xml:space="preserve"><value>The media looks like it was changed. Run SmartCal so the printer measures it.</value></data>
+  <data name="SmartCal_Dismiss.Content" xml:space="preserve"><value>Not now</value></data>
+  <data name="SmartCal_Run.Content" xml:space="preserve"><value>Run SmartCal</value></data>
+  <data name="SmartCal_Running.Text" xml:space="preserve"><value>Calibrating…</value></data>
+  <data name="SmartCal_Succeeded.Title" xml:space="preserve"><value>Calibrated</value></data>
+  <data name="SmartCal_Succeeded.Message" xml:space="preserve"><value>The printer measured:</value></data>
+  <data name="SmartCal_NoChange.Text" xml:space="preserve"><value>The printer measured the same label length as before, so nothing changed.</value></data>
+  <data name="SmartCal_TestPrint.Content" xml:space="preserve"><value>Print test label (feeds 1 label)</value></data>
+  <data name="SmartCal_CheckCompatibility.Content" xml:space="preserve"><value>Check media compatibility</value></data>
+  <data name="Checker_Intro.Text" xml:space="preserve"><value>Answer three questions to find out whether this printer's sensors can ever calibrate on your media.</value></data>
+  <data name="Checker_Unavailable.Text" xml:space="preserve"><value>Label Studio has no sensor information for this printer model, so it can't judge media compatibility.</value></data>
+  <data name="Checker_Sensing.Header" xml:space="preserve"><value>How does your media mark where each label starts?</value></data>
+  <data name="Checker_Sensing_Gap.Content" xml:space="preserve"><value>Gap or notch between labels</value></data>
+  <data name="Checker_Sensing_Mark.Content" xml:space="preserve"><value>Black mark on the back</value></data>
+  <data name="Checker_Sensing_Continuous.Content" xml:space="preserve"><value>Continuous (no gaps)</value></data>
+  <data name="Checker_GapQuestion.Header" xml:space="preserve"><value>Is the gap or notch at the centre of the media, across its width?</value></data>
+  <data name="Checker_MarkQuestion.Header" xml:space="preserve"><value>Is the black mark between the centre and the left edge (seen from the front of the printer)?</value></data>
+  <data name="Checker_Yes.Content" xml:space="preserve"><value>Yes</value></data>
+  <data name="Checker_Yes2.Content" xml:space="preserve"><value>Yes</value></data>
+  <data name="Checker_Yes3.Content" xml:space="preserve"><value>Yes</value></data>
+  <data name="Checker_No.Content" xml:space="preserve"><value>No</value></data>
+  <data name="Checker_No2.Content" xml:space="preserve"><value>No</value></data>
+  <data name="Checker_No3.Content" xml:space="preserve"><value>No</value></data>
+  <data name="Checker_UseLengthOnly.Content" xml:space="preserve"><value>Use continuous mode with a set length</value></data>
+  <data name="Checker_StartOver.Content" xml:space="preserve"><value>Start over</value></data>
+  <data name="MediaSetup_Title.Text" xml:space="preserve"><value>Media setup</value></data>
+  <data name="MediaSetup_Offline.Text" xml:space="preserve"><value>Connect a printer to change its media settings.</value></data>
+  <data name="MediaSetup_ReadOnly.Title" xml:space="preserve"><value>Read only</value></data>
+  <data name="MediaSetup_ReadOnly.Message" xml:space="preserve"><value>Label Studio can't change settings on this printer model yet. The values shown are what the printer reports.</value></data>
+  <data name="MediaSetup_Unsaved.Title" xml:space="preserve"><value>Not saved to the printer yet</value></data>
+  <data name="MediaSetup_Unsaved.Message" xml:space="preserve"><value>The printer is using these settings now. Save them so they stay set if the printer is reset.</value></data>
+  <data name="MediaSetup_Save.Content" xml:space="preserve"><value>Save to printer</value></data>
+  <data name="MediaSetup_MediaType.Header" xml:space="preserve"><value>Media type</value></data>
+  <data name="MediaSetup_MediaType_Continuous.Content" xml:space="preserve"><value>Continuous</value></data>
+  <data name="MediaSetup_MediaType_Gap.Content" xml:space="preserve"><value>Gap/notch</value></data>
+  <data name="MediaSetup_MediaType_Mark.Content" xml:space="preserve"><value>Black mark</value></data>
+  <data name="MediaSetup_PrintMethod.Header" xml:space="preserve"><value>Print method</value></data>
+  <data name="MediaSetup_PrintMethod_Transfer.Content" xml:space="preserve"><value>Thermal transfer (ribbon)</value></data>
+  <data name="MediaSetup_PrintMethod_Direct.Content" xml:space="preserve"><value>Direct thermal (no ribbon)</value></data>
+  <data name="MediaSetup_PrintMode.Header" xml:space="preserve"><value>After printing</value></data>
+  <data name="MediaSetup_PrintMode_TearOff.Content" xml:space="preserve"><value>Tear off</value></data>
+  <data name="MediaSetup_PrintMode_Peel.Content" xml:space="preserve"><value>Peel</value></data>
+  <data name="MediaSetup_LabelLength.Header" xml:space="preserve"><value>Label length (dots)</value></data>
+  <data name="MediaSetup_PrintWidth.Header" xml:space="preserve"><value>Print width (dots)</value></data>
+  <data name="MediaSetup_Darkness.Header" xml:space="preserve"><value>Darkness</value></data>
+  <data name="MediaSetup_TestPrint.Content" xml:space="preserve"><value>Test print</value></data>
+  <data name="MediaSetup_TestPrintNotice.Text" xml:space="preserve"><value>Feeds 1 label.</value></data>
+  <data name="MediaSetup_Speed.Text" xml:space="preserve"><value>Print speed</value></data>
+  <data name="MediaSetup_TearOff.Header" xml:space="preserve"><value>Tear-off position (dots)</value></data>
+  <data name="MediaSetup_LengthOnly_Title.Text" xml:space="preserve"><value>Continuous media with a set length</value></data>
+  <data name="MediaSetup_LengthOnly_Body.Text" xml:space="preserve"><value>For continuous media, or when the printer can't find gaps on your labels: the printer stops using its gap sensor and uses this length instead.</value></data>
+  <data name="MediaSetup_LengthOnly_Length.Header" xml:space="preserve"><value>Label length (dots)</value></data>
+  <data name="MediaSetup_LengthOnly_Apply.Content" xml:space="preserve"><value>Apply</value></data>
+  <data name="MediaDiagram_GapCentre" xml:space="preserve"><value>Diagram: the gap sensor sits at the centre of the media.</value></data>
+  <data name="MediaDiagram_MarkLeft" xml:space="preserve"><value>Diagram: the black mark sensor reaches from the centre to the left edge only.</value></data>
+  <data name="MediaDiagram_MinimumSize" xml:space="preserve"><value>Diagram: minimum label width and length.</value></data>
+  <data name="MediaDiagram_TearBar" xml:space="preserve"><value>Diagram: where the label stops relative to the tear bar.</value></data>
+  <data name="Home_Title.Text" xml:space="preserve"><value>Home</value></data>
+  <data name="Home_Printers.Text" xml:space="preserve"><value>Printers</value></data>
+  <data name="Home_OpenPrinters.Content" xml:space="preserve"><value>All printers</value></data>
+  <data name="Home_NoPrinters.Text" xml:space="preserve"><value>No Zebra printer found on USB. Check the cable and power, and remove the sticker over the USB port on a new printer.</value></data>
+  <data name="Home_FindPrinters.Content" xml:space="preserve"><value>Search again</value></data>
+  <data name="Home_Calibrate.Content" xml:space="preserve"><value>Calibrate</value></data>
+  <data name="FirstRun_Find_Title.Text" xml:space="preserve"><value>Find your printer</value></data>
+  <data name="FirstRun_FindAgain.Content" xml:space="preserve"><value>Search again</value></data>
+  <data name="FirstRun_Media_Title.Text" xml:space="preserve"><value>Confirm your media</value></data>
+  <data name="FirstRun_Media_Body.Text" xml:space="preserve"><value>Load your labels with the gap or mark facing the sensor, and close the cover. This is what the printer currently expects:</value></data>
+  <data name="FirstRun_CheckMedia.Content" xml:space="preserve"><value>Not sure your labels suit this printer? Check media compatibility</value></data>
+  <data name="FirstRun_Test_Title.Text" xml:space="preserve"><value>Print a test label</value></data>
+  <data name="FirstRun_Test_Print.Content" xml:space="preserve"><value>Print test label (feeds 1 label)</value></data>
+  <data name="FirstRun_Test_Question.Text" xml:space="preserve"><value>Did the test label print correctly, starting at the top of a label?</value></data>
+  <data name="FirstRun_Test_Yes.Content" xml:space="preserve"><value>Yes, it's correct</value></data>
+  <data name="FirstRun_Test_No.Content" xml:space="preserve"><value>No</value></data>
+  <data name="FirstRun_Skip.Content" xml:space="preserve"><value>Skip setup</value></data>
+  <data name="FirstRun_Back.Content" xml:space="preserve"><value>Back</value></data>
+  <data name="FirstRun_Next.Content" xml:space="preserve"><value>Next</value></data>
+  <data name="BlinkCodes_Back.[using:Microsoft.UI.Xaml.Automation]AutomationProperties.Name" xml:space="preserve"><value>Back</value></data>
+  <data name="BlinkCodes_Back.[using:Microsoft.UI.Xaml.Controls]ToolTipService.ToolTip" xml:space="preserve"><value>Back</value></data>
+  <data name="BlinkCodes_Search.PlaceholderText" xml:space="preserve"><value>Search lights and button sequences</value></data>
+  <data name="BlinkCodes_NoReference.Text" xml:space="preserve"><value>There is no light and button reference for this printer model yet.</value></data>
+  <data name="BlinkCodes_NoMatches.Text" xml:space="preserve"><value>Nothing matches that search. Try a colour, such as "red", or a word like "flashing".</value></data>
 </root>

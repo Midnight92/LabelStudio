@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using LabelStudio.Core;
 using LabelStudio.Devices.Capabilities;
+using LabelStudio.Devices.Settings;
 using LabelStudio.Devices.Simulation;
 using LabelStudio.Devices.Status;
 using LabelStudio.Tests;
@@ -241,7 +242,8 @@ public class DeviceServiceTests
         var settings = new SettingsService(new JsonFileStore<AppSettings>(dir.File("settings.json")));
         var svc = new DeviceService(
             discovery, new SimulatedTransportFactory(discovery), new CapabilityProber(TimeSpan.FromMilliseconds(50)),
-            new ProfileCache(badProfilesPath), settings, new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
+            new ProfileCache(badProfilesPath), new ConfigurationSnapshotStore(dir.File("backups")), settings,
+            new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
         await using var _ = svc;
 
         await svc.StartAsync(None);
@@ -261,7 +263,8 @@ public class DeviceServiceTests
         var settings = new SettingsService(new JsonFileStore<AppSettings>(settingsPath));
         var svc = new DeviceService(
             discovery, new SimulatedTransportFactory(discovery), new CapabilityProber(TimeSpan.FromMilliseconds(50)),
-            new ProfileCache(dir.File("profiles")), settings, new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
+            new ProfileCache(dir.File("profiles")), new ConfigurationSnapshotStore(dir.File("backups")), settings,
+            new FakeTimeProvider(), NullLogger<DeviceService>.Instance);
         await using var _ = svc;
 
         await svc.StartAsync(None);
@@ -286,5 +289,26 @@ public class DeviceServiceTests
         Assert.True(printer.GetVarRequests.Count > firstAttempts,
             $"Expected the second connect to re-query every key instead of trusting a cached all-unresponsive result " +
             $"(first attempt count: {firstAttempts}, second: {printer.GetVarRequests.Count}).");
+    }
+
+    [Fact]
+    public async Task Firmware_change_reprobes_previously_unresponsive_keys()
+    {
+        using var dir = new TempDir();
+        var printer = new SimulatedPrinter();
+        printer.SilentKeys.Add(SgdKeys.PowerUpAction);
+        var (svc, _, _) = TestDevices.Create(dir, printer);
+        await using var _ = svc;
+        await svc.StartAsync(None);
+        Assert.False(svc.Snapshot.Profile!.Supports(SgdKeys.PowerUpAction));
+
+        printer.SilentKeys.Clear();
+        printer.Sgd[SgdKeys.PowerUpAction] = "no motion";
+        await svc.ReconnectAsync(None);
+        Assert.False(svc.Snapshot.Profile!.Supports(SgdKeys.PowerUpAction)); // same firmware: the cached skip holds
+
+        printer.Firmware = "V99.00.00Z";
+        await svc.ReconnectAsync(None);
+        Assert.True(svc.Snapshot.Profile!.Supports(SgdKeys.PowerUpAction));
     }
 }

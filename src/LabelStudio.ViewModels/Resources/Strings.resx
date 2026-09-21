@@ -75,6 +75,81 @@
   <data name="Printers.Hint.NotConnected" xml:space="preserve"><value>Connect a printer to use these actions.</value></data>
   <data name="Printers.Hint.Fault" xml:space="preserve"><value>Clear the printer fault to print or feed.</value></data>
   <data name="Printers.Hint.Paused" xml:space="preserve"><value>Resume the printer to print a test label.</value></data>
+  <data name="Printers.Hint.Calibrating" xml:space="preserve"><value>Calibrating — printing and feeding are paused until it finishes.</value></data>
+  <data name="Row.LabelsPrinted" xml:space="preserve"><value>Labels printed (printer counter)</value></data>
+  <data name="Row.HeadDistance" xml:space="preserve"><value>Print head distance</value></data>
+  <data name="Row.SinceHeadClean" xml:space="preserve"><value>Since last head clean</value></data>
+  <data name="Format.Distance" xml:space="preserve"><value>{0:N0} in · {1:N0} cm</value></data>
   <data name="Sgd.Responded" xml:space="preserve"><value>Responded</value></data>
   <data name="Sgd.NoResponse" xml:space="preserve"><value>No response</value></data>
+  <data name="Settings.BackupFailed" xml:space="preserve"><value>Couldn't save a backup of the printer's settings, so nothing was changed. Check that there is free disk space, then try again.</value></data>
+  <data name="Calibration.FeedNotice" xml:space="preserve"><value>Calibration feeds about {0} labels while the printer measures the media.</value></data>
+  <data name="Calibration.NoChange" xml:space="preserve"><value>The printer measured the same label length as before, so nothing changed.</value></data>
+  <data name="Calibration.Check.Media.Ok" xml:space="preserve"><value>Labels are loaded</value></data>
+  <data name="Calibration.Check.Media.Problem" xml:space="preserve"><value>No labels detected — load labels first</value></data>
+  <data name="Calibration.Check.Cover.Ok" xml:space="preserve"><value>Cover is closed</value></data>
+  <data name="Calibration.Check.Cover.Problem" xml:space="preserve"><value>Cover is open — close it until it clicks</value></data>
+  <data name="Calibration.Check.Ribbon.Ok" xml:space="preserve"><value>Ribbon is loaded</value></data>
+  <data name="Calibration.Check.Ribbon.Problem" xml:space="preserve"><value>No ribbon detected — load a ribbon first</value></data>
+  <data name="Calibration.Failed.NotConnected.Title" xml:space="preserve"><value>No printer connected</value></data>
+  <data name="Calibration.Failed.NotConnected.Body" xml:space="preserve"><value>Connect the printer with its USB cable and switch it on, then try again.</value></data>
+  <data name="Calibration.Failed.HeadOpen.Title" xml:space="preserve"><value>Print head open</value></data>
+  <data name="Calibration.Failed.HeadOpen.Body" xml:space="preserve"><value>The cover was open, so calibration stopped. Close the cover until it clicks, then run SmartCal again.</value></data>
+  <data name="Calibration.Failed.MediaOut.Title" xml:space="preserve"><value>No labels loaded</value></data>
+  <data name="Calibration.Failed.MediaOut.Body" xml:space="preserve"><value>The printer reported media out before calibrating. Load labels and close the cover, then run SmartCal again.</value></data>
+  <data name="Calibration.Failed.RibbonOut.Title" xml:space="preserve"><value>Ribbon out</value></data>
+  <data name="Calibration.Failed.RibbonOut.Body" xml:space="preserve"><value>The printer reported no ribbon. Load a ribbon, then run SmartCal again.</value></data>
+  <data name="Calibration.Failed.NoGapFound.Title" xml:space="preserve"><value>The printer couldn't find the gap between labels</value></data>
+  <data name="Calibration.Failed.NoGapFound.Body" xml:space="preserve"><value>It fed labels looking for a gap or mark and never found one. This usually means the media can't be sensed by this printer. Check media compatibility before trying again.</value></data>
+  <data name="Calibration.Failed.Timeout.Title" xml:space="preserve"><value>Calibration didn't finish</value></data>
+  <data name="Calibration.Failed.Timeout.Body" xml:space="preserve"><value>The printer didn't report a result in time. Check that labels feed freely, then run SmartCal again. If it keeps happening, check media compatibility.</value></data>
+  <data name="Checker.SizeQuestion" xml:space="preserve"><value>Is each label at least {0} in ({1} mm) long and {0} in wide?</value></data>
+  <data name="Checker.Reason.GapOffCentre" xml:space="preserve"><value>The gap or notch isn't at the centre of the media. This printer's gap sensor is fixed at the centre and can't be moved.</value></data>
+  <data name="Checker.Reason.MarkOnRight" xml:space="preserve"><value>The black mark is on the right side. This printer's mark sensor only reaches from the centre to the left edge.</value></data>
+  <data name="Checker.Reason.BelowMinimumSize" xml:space="preserve"><value>The labels are smaller than this printer's minimum size, so it can't calibrate on them.</value></data>
+  <data name="Checker.Compatible.Title" xml:space="preserve"><value>This media should work</value></data>
+  <data name="Checker.Compatible.Body" xml:space="preserve"><value>Its gap, mark and size suit this printer's sensors. Run SmartCal again with the media loaded straight and the cover closed.</value></data>
+  <data name="Checker.Compatible.Continuous.Body" xml:space="preserve"><value>Continuous media has no gaps or marks to measure, so SmartCal can't calibrate on it. Set the media type to continuous and enter the label length you want instead.</value></data>
+  <data name="Checker.Incompatible.Title" xml:space="preserve"><value>This media can't be calibrated on this printer</value></data>
+  <data name="Checker.Incompatible.Body" xml:space="preserve"><value>Retrying won't help. Either change to media that suits the printer, or use continuous mode with a set label length.</value></data>
+  <data name="MediaSetup.Rejected" xml:space="preserve"><value>The printer didn't accept: {0}. It kept its previous value.</value></data>
+  <data name="MediaSetup.OutOfRange" xml:space="preserve"><value>That value is outside what this printer supports. Enter a value within the range shown.</value></data>
+  <data name="MediaSetup.LengthOutOfRange" xml:space="preserve"><value>Enter a label length between {0} and {1}.</value></data>
+  <data name="MediaSetup.SpeedFixed" xml:space="preserve"><value>{0} in/s (fixed on this printer)</value></data>
+  <data name="BlinkCode.Kind.LedPattern" xml:space="preserve"><value>Status light</value></data>
+  <data name="BlinkCode.Kind.FeedSequence" xml:space="preserve"><value>FEED button</value></data>
+  <data name="BlinkCode.Source" xml:space="preserve"><value>Zebra user guide, {0}</value></data>
+  <data name="BlinkCodes.Heading" xml:space="preserve"><value>{0} lights and button</value></data>
+  <data name="BlinkCodes.HeadingAll" xml:space="preserve"><value>Printer lights and button</value></data>
+  <data name="BlinkCode.ZD220.SolidGreen.Pattern" xml:space="preserve"><value>Solid green</value></data>
+  <data name="BlinkCode.ZD220.SolidGreen.Meaning" xml:space="preserve"><value>The printer is ready for print and data activity.</value></data>
+  <data name="BlinkCode.ZD220.SolidGreen.Action" xml:space="preserve"><value>No action needed; the printer is ready to print.</value></data>
+  <data name="BlinkCode.ZD220.FlashingGreen.Pattern" xml:space="preserve"><value>Flashing green</value></data>
+  <data name="BlinkCode.ZD220.FlashingGreen.Meaning" xml:space="preserve"><value>Normal operation; the printer is communicating or processing data.</value></data>
+  <data name="BlinkCode.ZD220.FlashingGreen.Action" xml:space="preserve"><value>Wait for the light to turn solid green before sending another job.</value></data>
+  <data name="BlinkCode.ZD220.DoubleFlashingGreen.Pattern" xml:space="preserve"><value>Double-flashing green (two short flashes, one long flash)</value></data>
+  <data name="BlinkCode.ZD220.DoubleFlashingGreen.Meaning" xml:space="preserve"><value>The printer is paused.</value></data>
+  <data name="BlinkCode.ZD220.DoubleFlashingGreen.Action" xml:space="preserve"><value>Choose Resume in the app to continue printing.</value></data>
+  <data name="BlinkCode.ZD220.FlashingRed.Pattern" xml:space="preserve"><value>Flashing red</value></data>
+  <data name="BlinkCode.ZD220.FlashingRed.Meaning" xml:space="preserve"><value>The printer is open, out of media, unable to sense the loaded media, or detecting a cut error.</value></data>
+  <data name="BlinkCode.ZD220.FlashingRed.Action" xml:space="preserve"><value>Close the cover and check that media is loaded and sensed correctly, then choose Retry.</value></data>
+  <data name="BlinkCode.ZD220.FlashingAmber.Pattern" xml:space="preserve"><value>Flashing amber</value></data>
+  <data name="BlinkCode.ZD220.FlashingAmber.Meaning" xml:space="preserve"><value>The print head is over temperature and must cool before printing resumes.</value></data>
+  <data name="BlinkCode.ZD220.FlashingAmber.Action" xml:space="preserve"><value>Let the printer cool; printing resumes on its own.</value></data>
+  <data name="BlinkCode.ZD220.FlashingRedRedGreen.Pattern" xml:space="preserve"><value>Flashing red, red, green</value></data>
+  <data name="BlinkCode.ZD220.FlashingRedRedGreen.Meaning" xml:space="preserve"><value>The print head or motor has failed.</value></data>
+  <data name="BlinkCode.ZD220.FlashingRedRedGreen.Action" xml:space="preserve"><value>Power the printer off and contact support; this fault isn't user-serviceable.</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedOneFlash.Pattern" xml:space="preserve"><value>Hold FEED 2 s, release at the first flash</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedOneFlash.Meaning" xml:space="preserve"><value>Prints a configuration report and exits Advanced mode.</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedOneFlash.Action" xml:space="preserve"><value>With the printer ready, hold FEED for 2 seconds and release as soon as the light flashes once.</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedTwoFlashes.Pattern" xml:space="preserve"><value>Hold FEED, release at the second flash</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedTwoFlashes.Meaning" xml:space="preserve"><value>Runs Smart Cal to measure the loaded media and set its sensing parameters.</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedTwoFlashes.Action" xml:space="preserve"><value>Keep holding FEED past the first flash and release at the second flash.</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedThreeFlashes.Pattern" xml:space="preserve"><value>Hold FEED, release at the third flash</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedThreeFlashes.Meaning" xml:space="preserve"><value>Resets the printer to its factory default settings.</value></data>
+  <data name="BlinkCode.ZD220.HoldFeedThreeFlashes.Action" xml:space="preserve"><value>Keep holding FEED past the second flash and release at the third flash.</value></data>
+  <data name="BlinkCode.ZD220.ReleaseFeedAfterThirdFlash.Pattern" xml:space="preserve"><value>Hold FEED 2 s or more past the third flash</value></data>
+  <data name="BlinkCode.ZD220.ReleaseFeedAfterThirdFlash.Meaning" xml:space="preserve"><value>Exits Advanced mode without making a change and returns to normal operation.</value></data>
+  <data name="BlinkCode.ZD220.ReleaseFeedAfterThirdFlash.Action" xml:space="preserve"><value>Keep holding FEED for 2 or more seconds after the third flash, then release.</value></data>
+  <data name="FirstRun.StepOf" xml:space="preserve"><value>Step {0} of {1}</value></data>
 </root>

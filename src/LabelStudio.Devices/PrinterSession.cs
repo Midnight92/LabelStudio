@@ -54,6 +54,15 @@ public sealed class PrinterSession : IAsyncDisposable
         }
     }
 
+    /// <summary>Sends an SGD setvar. The printer does not reply, so callers read the key back to verify.</summary>
+    public async Task SetSgdAsync(string key, string value, CancellationToken ct)
+    {
+        var command = Sgd.SetVarCommand(key, value);
+        await _gate.WaitAsync(ct);
+        try { await _transport.WriteAsync(command, ct); }
+        finally { _gate.Release(); }
+    }
+
     public async Task SendRawAsync(string commands, CancellationToken ct)
     {
         await _gate.WaitAsync(ct);
