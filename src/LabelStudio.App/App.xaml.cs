@@ -168,5 +168,16 @@ public partial class App : Application
         {
             Services.GetRequiredService<ILogger<App>>().LogError(ex, "Closing the printer connection on exit failed");
         }
+
+        // The container owns the Serilog sink and the fault notifier; disposing it last flushes the log file
+        // and unsubscribes the notifier rather than leaving them to process exit.
+        try
+        {
+            if (Services is ServiceProvider provider) await provider.DisposeAsync();
+        }
+        catch (Exception)
+        {
+            // Nothing left to log to at this point: the logger belongs to the container being disposed.
+        }
     }
 }

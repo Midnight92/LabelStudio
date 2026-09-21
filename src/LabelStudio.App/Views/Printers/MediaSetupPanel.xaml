@@ -54,10 +54,12 @@
                 IsEnabled="{x:Bind ViewModel.CanEdit, Mode=OneWay}"
                 Minimum="{x:Bind ViewModel.DarknessMin, Mode=OneWay}" Maximum="{x:Bind ViewModel.DarknessMax, Mode=OneWay}"
                 Value="{x:Bind ViewModel.Darkness, Mode=TwoWay}" />
-        <StackPanel Orientation="Horizontal" Spacing="12">
-          <Button x:Uid="MediaSetup_TestPrint" Command="{x:Bind ViewModel.PrintTestLabelCommand, Mode=OneWay}" />
-          <TextBlock x:Uid="MediaSetup_TestPrintNotice" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-        </StackPanel>
+      </StackPanel>
+
+      <!-- Outside the darkness block on purpose: a printer that doesn't answer print.tone can still test print. -->
+      <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ViewModel.IsConnected, Mode=OneWay}">
+        <Button x:Uid="MediaSetup_TestPrint" Command="{x:Bind ViewModel.PrintTestLabelCommand, Mode=OneWay}" />
+        <TextBlock x:Uid="MediaSetup_TestPrintNotice" VerticalAlignment="Center" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
       </StackPanel>
 
       <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.IsSpeedVisible, Mode=OneWay}">

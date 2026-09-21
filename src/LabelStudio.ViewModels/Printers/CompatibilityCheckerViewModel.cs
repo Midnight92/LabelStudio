@@ -86,7 +86,9 @@ public sealed partial class CompatibilityCheckerViewModel : ObservableObject, ID
     {
         var traits = _devices.Traits;
         IsAvailable = traits.Sensors is not null;
-        var minInches = traits.LabelLengthDots.Min / 203.2;
+        // Resolution comes from the probed printer, not a constant: this layer is shared across models.
+        var dotsPerMm = _devices.Snapshot.Profile?.DotsPerMm ?? 8;
+        var minInches = traits.LabelLengthDots.Min / (dotsPerMm * 25.4);
         SizeQuestion = Strings.Format("Checker.SizeQuestion", minInches.ToString("0.0", CultureInfo.CurrentCulture), Math.Round(minInches * 25.4));
     }
 
