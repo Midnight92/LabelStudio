@@ -8,6 +8,9 @@
     <StackPanel Padding="32,22" Spacing="16">
       <TextBlock x:Uid="Home_Title" Style="{StaticResource TitleTextBlockStyle}" />
 
+      <InfoBar Severity="Error" IsClosable="True" IsOpen="{x:Bind app:XamlHelpers.IsNotNull(ViewModel.CommandError), Mode=OneWay}"
+               Message="{x:Bind ViewModel.CommandError, Mode=OneWay}" />
+
       <views:FirstRunView ViewModel="{x:Bind ViewModel.FirstRun}" Visibility="{x:Bind ViewModel.ShowFirstRun, Mode=OneWay}" />
 
       <StackPanel Spacing="12" Visibility="{x:Bind app:XamlHelpers.CollapsedWhen(ViewModel.ShowFirstRun), Mode=OneWay}">

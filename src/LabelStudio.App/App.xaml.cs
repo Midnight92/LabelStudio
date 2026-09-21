@@ -108,8 +108,10 @@ public partial class App : Application
         services.AddTransient<CompatibilityCheckerViewModel>();
         services.AddTransient<PrintersViewModel>();
         services.AddTransient<BlinkCodesViewModel>();
-        services.AddTransient<FirstRunViewModel>();
-        services.AddTransient<HomeViewModel>();
+        // Home and first run are singletons: the wizard holds the operator's progress through four steps,
+        // and a transient would silently restart at step 1 if they visited another page and came back.
+        services.AddSingleton<FirstRunViewModel>();
+        services.AddSingleton<HomeViewModel>();
         return services.BuildServiceProvider();
     }
 

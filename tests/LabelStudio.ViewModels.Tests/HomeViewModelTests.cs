@@ -35,6 +35,34 @@ public class HomeViewModelTests
         Assert.False(vm.ShowFirstRun);
     }
 
+    /// <summary>
+    /// HomeViewModel and FirstRunViewModel are DI singletons (App.xaml.cs) precisely so that navigating to
+    /// another page and back doesn't rebuild them — a transient would silently restart the wizard at step 1.
+    /// The DI lifetime itself isn't unit-testable, so this proves the part that actually matters: nothing in
+    /// HomeViewModel — including the Rebuild() its own snapshot/printers-changed handlers run on every poll —
+    /// replaces or resets FirstRun once the operator has moved past step 1.
+    /// </summary>
+    [Fact]
+    public async Task First_run_progress_survives_home_rebuilding_its_printer_cards()
+    {
+        using var dir = new TempDir();
+        var (svc, _, settings) = TestDevices.Create(dir, new SimulatedPrinter());
+        await using var _ = svc;
+        using var vm = Create(svc, settings, new StartupState(true), new RecordingNavigation());
+        await svc.StartAsync(CancellationToken.None);
+
+        vm.FirstRun.NextCommand.Execute(null); // FindPrinter -> ConfirmMedia
+        Assert.Equal(FirstRunStep.ConfirmMedia, vm.FirstRun.Step);
+        var firstRunDuringWizard = vm.FirstRun;
+
+        // Simulate the operator having briefly left Home and come back: a poll fires while they're away,
+        // which is exactly the kind of event a transient FirstRun would have no defense against.
+        await svc.RefreshAsync(CancellationToken.None);
+
+        Assert.Same(firstRunDuringWizard, vm.FirstRun);
+        Assert.Equal(FirstRunStep.ConfirmMedia, vm.FirstRun.Step);
+    }
+
     [Fact]
     public async Task Printer_cards_show_status_and_calibrate_deep_links()
     {
